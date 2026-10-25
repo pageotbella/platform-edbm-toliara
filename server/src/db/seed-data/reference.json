@@ -1,0 +1,223 @@
+{
+  "sectors": [
+    {
+      "name": "Agribusiness",
+      "slug": "agribusiness",
+      "description": "Filières d'exportation (pois du Cap, arachide, coton) et transformation agro-industrielle.",
+      "isActive": true
+    },
+    {
+      "name": "Aquaculture",
+      "slug": "aquaculture",
+      "description": "Algoculture, crevetticulture et pêche durable sur le littoral du canal de Mozambique.",
+      "isActive": true
+    },
+    {
+      "name": "Énergie",
+      "slug": "energie",
+      "description": "Solaire, éolien et stockage : le Sud-Ouest bénéficie de plus de 3 000 heures d'ensoleillement par an.",
+      "isActive": true
+    },
+    {
+      "name": "Industrie",
+      "slug": "industrie",
+      "description": "Zones industrielles portuaires, logistique et transformation.",
+      "isActive": true
+    },
+    {
+      "name": "Mines",
+      "slug": "mines",
+      "description": "Saphirs, ilménite et pierres industrielles ; transformation locale à valeur ajoutée.",
+      "isActive": true
+    },
+    {
+      "name": "TIC",
+      "slug": "tic",
+      "description": "Centres de services numériques, BPO et connectivité par câble sous-marin.",
+      "isActive": true
+    },
+    {
+      "name": "Tourisme",
+      "slug": "tourisme",
+      "description": "Écotourisme balnéaire, lagons d'Ifaty et d'Anakao, parcs nationaux.",
+      "isActive": true
+    }
+  ],
+  "regions": [
+    {
+      "name": "Analamanga",
+      "code": "ANALAMANGA",
+      "districts": [
+        {
+          "name": "Antananarivo Renivohitra",
+          "communes": [
+            "Antananarivo"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Androy",
+      "code": "ANDROY",
+      "districts": [
+        {
+          "name": "Ambovombe",
+          "communes": [
+            "Ambovombe"
+          ]
+        },
+        {
+          "name": "Tsihombe",
+          "communes": [
+            "Tsihombe"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Anosy",
+      "code": "ANOSY",
+      "districts": [
+        {
+          "name": "Amboasary",
+          "communes": [
+            "Amboasary Atsimo"
+          ]
+        },
+        {
+          "name": "Taolagnaro",
+          "communes": [
+            "Mandena",
+            "Taolagnaro"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Atsimo-Andrefana",
+      "code": "ATSIMO-ANDREFANA",
+      "districts": [
+        {
+          "name": "Ampanihy Ouest",
+          "communes": [
+            "Ampanihy",
+            "Itampolo"
+          ]
+        },
+        {
+          "name": "Ankazoabo",
+          "communes": [
+            "Ankazoabo"
+          ]
+        },
+        {
+          "name": "Benenitra",
+          "communes": [
+            "Benenitra"
+          ]
+        },
+        {
+          "name": "Beroroha",
+          "communes": [
+            "Beroroha"
+          ]
+        },
+        {
+          "name": "Betioky Sud",
+          "communes": [
+            "Beheloka",
+            "Betioky"
+          ]
+        },
+        {
+          "name": "Morombe",
+          "communes": [
+            "Basibasy",
+            "Befandefa",
+            "Morombe"
+          ]
+        },
+        {
+          "name": "Sakaraha",
+          "communes": [
+            "Ilakaka",
+            "Mahaboboka",
+            "Sakaraha"
+          ]
+        },
+        {
+          "name": "Toliara I",
+          "communes": [
+            "Toliara"
+          ]
+        },
+        {
+          "name": "Toliara II",
+          "communes": [
+            "Anakao",
+            "Ankilimalinika",
+            "Belalanda",
+            "Maromiandra",
+            "Miary",
+            "Saint-Augustin"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Boeny",
+      "code": "BOENY",
+      "districts": [
+        {
+          "name": "Mahajanga I",
+          "communes": [
+            "Mahajanga"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Diana",
+      "code": "DIANA",
+      "districts": [
+        {
+          "name": "Antsiranana I",
+          "communes": [
+            "Antsiranana"
+          ]
+        },
+        {
+          "name": "Nosy Be",
+          "communes": [
+            "Hell-Ville"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Menabe",
+      "code": "MENABE",
+      "districts": [
+        {
+          "name": "Belo sur Tsiribihina",
+          "communes": [
+            "Belo sur Tsiribihina"
+          ]
+        },
+        {
+          "name": "Morondava",
+          "communes": [
+            "Morondava"
+          ]
+        }
+      ]
+    }
+  ],
+  "contact": {
+    "name": "EDBM — Antenne régionale de Toliara",
+    "email": "antenne.toliara@edbm.mg",
+    "hours": "Lun – Ven : 08h00 – 16h30",
+    "phone": "+261 34 35 642 22",
+    "address": "Rue du Port, face Douanes, Toliara 601, Madagascar"
+  }
+}

@@ -1,0 +1,135 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/plus-jakarta-sans";
+
+/* Pas de thème sombre : les variantes dark: des primitives ne s'appliquent qu'avec une classe .dark (jamais posée) */
+@custom-variant dark (&:is(.dark *));
+
+/* Design system EDBM Toliara projeté sur les variables shadcn. Couleurs de la charte EDBM
+   (site edbm.mg et logo) : violet #7a3f7a, dégradé du logo #5d3b6e → #974d92. */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-primary-dark: var(--primary-dark);
+  --color-brand-light: var(--brand-light);
+  --color-ochre: var(--ochre);
+  --color-ochre-foreground: var(--ochre-foreground);
+  --color-surface-low: var(--surface-low);
+  --color-border-strong: var(--border-strong);
+  --shadow-card: 0 1px 3px 0 rgb(31 41 55 / 0.04), 0 1px 2px -1px rgb(31 41 55 / 0.04);
+  --shadow-hover: 0 6px 16px -4px rgb(31 41 55 / 0.08), 0 2px 6px -2px rgb(31 41 55 / 0.04);
+  --shadow-overlay: 0 20px 25px -5px rgb(31 41 55 / 0.12), 0 8px 10px -6px rgb(31 41 55 / 0.06);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #7a3f7a;
+  --primary-foreground: #ffffff;
+  --primary-dark: #4a2858;
+  /* Violet clair lisible sur fond violet (mises en avant, puces, libellés) */
+  --brand-light: #ecc8e6;
+  --brand-from: #5d3b6e;
+  --brand-to: #974d92;
+  --secondary: #1f2937;
+  --secondary-foreground: #ffffff;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #f6edf5;
+  --accent-foreground: #1f2937;
+  --ochre: #d97706;
+  --ochre-foreground: #ffffff;
+  --surface-low: #f9f3f8;
+  --destructive: #dc2626;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --input: #cbd5e1;
+  --ring: #7a3f7a;
+  --chart-1: #7a3f7a;
+  --chart-2: #49607c;
+  --chart-3: #d97706;
+  --chart-4: #c189b8;
+  --chart-5: #7b4100;
+  --radius: 0.5rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #7a3f7a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #1f2937;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #7a3f7a;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+@layer components {
+  /* Libellés de section façon « tampon administratif » (surchargeables par les utilitaires) */
+  .label-caps {
+    @apply text-[11px] font-bold uppercase tracking-[0.08em];
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Dégradé du logo EDBM, pour les grandes surfaces de marque (bandeau, hero, encarts) */
+  .bg-brand-gradient {
+    background-image: linear-gradient(120deg, var(--brand-from), var(--brand-to));
+  }
+  .container-page {
+    @apply mx-auto w-full max-w-[1360px] px-4 md:px-8 xl:px-12;
+  }
+}

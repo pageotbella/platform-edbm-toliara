@@ -1,0 +1,4 @@
+# Les règles communes (node_modules, dist, .env, journaux, éditeurs…) sont dans le .gitignore racine.
+# Fichiers propres au client Vite :
+dist-ssr/
+*.local

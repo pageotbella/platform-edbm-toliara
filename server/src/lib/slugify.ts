@@ -1,0 +1,10 @@
+// « Centrale solaire à Toliara II » → « centrale-solaire-a-toliara-ii »
+export function slugify(input: string) {
+  return input
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 200);
+}
