@@ -1,7 +1,4 @@
-import {
-  Anchor, ArrowRight, BadgeCheck, Building2, ClipboardList, Compass, FileSearch, Handshake, Layers,
-  MapPinned, Plane, Plug, Rocket, Sun, TrendingUp,
-} from "lucide-react";
+import { Anchor, ArrowRight, BadgeCheck, Building2, ClipboardList, Compass, FilePlus2, FileSearch, Handshake, Layers, Lightbulb, MapPinned, Plane, Plug, Rocket, Sun, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { KpiCard } from "@/components/common/kpi-card";
 import { OpportunityCard } from "@/components/common/opportunity-card";
@@ -223,6 +220,28 @@ export function HomePage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      {/* Porteurs de projet : dépôt en ligne */}
+      <section className="container-page pb-10">
+        <div className="flex flex-col gap-6 rounded-xl border bg-white p-6 shadow-card md:flex-row md:items-center md:justify-between md:p-10">
+          <div className="flex gap-5">
+            <span className="hidden size-14 shrink-0 items-center justify-center rounded-xl bg-accent text-primary sm:flex">
+              <Lightbulb className="size-7" />
+            </span>
+            <div className="max-w-2xl space-y-2">
+              <p className="label-caps text-primary">Porteurs de projet</p>
+              <h2 className="text-2xl font-bold">Vous portez un projet mais ne pouvez pas venir à l&apos;antenne ?</h2>
+              <p className="text-muted-foreground">
+                Déposez-le en ligne, avec photos et documents. Un agent de l&apos;EDBM Toliara l&apos;étudie et vous tient
+                informé par e-mail jusqu&apos;à sa publication dans le catalogue.
+              </p>
+            </div>
+          </div>
+          <Link to="/inscription?type=porteur" className={cn(buttonVariants(), "h-11 shrink-0 px-5")}>
+            <FilePlus2 /> Déposer un projet
+          </Link>
+        </div>
       </section>
 
       {/* Appel à l'action */}

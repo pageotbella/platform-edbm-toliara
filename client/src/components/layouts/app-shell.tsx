@@ -8,7 +8,7 @@ import { ROLE_HOME, ROLE_LABELS, type Role } from "@/config/constants";
 import { initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
-import { NAV, type NavItem, type Space } from "./nav-config";
+import { isStaffSpace, NAV, type NavItem, type Space } from "./nav-config";
 import { NotificationBell } from "./notification-bell";
 import { useSignOut } from "@/features/auth/hooks";
 import { useUnreadCount } from "@/features/notifications/hooks";
@@ -25,7 +25,7 @@ function activeHref(pathname: string | null, items: NavItem[]) {
 }
 
 function useStaffInfo(space: Space) {
-  return useStaffMe({ enabled: space !== "investisseur" }).data;
+  return useStaffMe({ enabled: isStaffSpace(space) }).data;
 }
 
 function CountBadge({ n }: { n: number | undefined }) {

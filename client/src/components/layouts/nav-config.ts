@@ -10,7 +10,10 @@ export type NavItem = {
   perm?: "canManageSectors" | "canManageRegions";
 };
 export type NavSection = { title?: string; items: NavItem[] };
-export type Space = "investisseur" | "edbm" | "admin";
+export type Space = "investisseur" | "porteur" | "edbm" | "admin";
+
+/** Espaces du personnel EDBM (menus « selon permission », compteur de demandes) */
+export const isStaffSpace = (space: Space) => space === "edbm" || space === "admin";
 
 // Menus des espaces connectés (section 19 pour l'investisseur)
 export const NAV: Record<Space, { label: string; sections: NavSection[] }> = {
@@ -26,6 +29,20 @@ export const NAV: Record<Space, { label: string; sections: NavSection[] }> = {
           { href: "/investisseur/demandes", label: "Mes demandes d'intérêt", icon: Send },
           { href: "/investisseur/notifications", label: "Notifications", icon: Bell, badge: "notifications" },
           { href: "/investisseur/profil", label: "Mon profil", icon: UserRound },
+        ],
+      },
+    ],
+  },
+  // Porteur de projet : dépôt en ligne et suivi de ses projets
+  porteur: {
+    label: "Espace porteur",
+    sections: [
+      {
+        items: [
+          { href: "/porteur", label: "Mes projets", icon: FolderKanban, exact: true },
+          { href: "/porteur/projets/nouveau", label: "Déposer un projet", icon: FilePlus2, exact: true },
+          { href: "/porteur/notifications", label: "Notifications", icon: Bell, badge: "notifications" },
+          { href: "/porteur/profil", label: "Mon profil", icon: UserRound },
         ],
       },
     ],

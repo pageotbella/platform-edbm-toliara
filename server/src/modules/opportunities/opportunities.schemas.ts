@@ -53,4 +53,8 @@ export const opportunityInputSchema = z.object({
 });
 export type OpportunityInput = z.infer<typeof opportunityInputSchema>;
 
-export const changeStatusSchema = z.object({ status: z.enum(opportunityStatusValues) });
+// `note` : remarque transmise au porteur de projet (ex. compléments demandés lors d'un renvoi en brouillon)
+export const changeStatusSchema = z.object({
+  status: z.enum(opportunityStatusValues),
+  note: z.string().trim().max(2000).optional(),
+});

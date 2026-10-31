@@ -14,24 +14,25 @@ import { PERM_LABELS } from "@/config/constants";
 
 type Cell = "oui" | "non" | "perm";
 // Matrice des rôles (section 7 du cahier des charges)
-const MATRIX: { feature: string; cells: [Cell, Cell, Cell, Cell] }[] = [
-  { feature: "Consulter les opportunités", cells: ["oui", "oui", "oui", "oui"] },
-  { feature: "Rechercher et utiliser les filtres", cells: ["oui", "oui", "oui", "oui"] },
-  { feature: "Consulter la carte", cells: ["oui", "oui", "oui", "oui"] },
-  { feature: "Créer un compte", cells: ["oui", "non", "non", "non"] },
-  { feature: "Ajouter aux favoris", cells: ["non", "oui", "non", "non"] },
-  { feature: "Envoyer une demande d'intérêt", cells: ["non", "oui", "non", "non"] },
-  { feature: "Consulter ses demandes", cells: ["non", "oui", "non", "non"] },
-  { feature: "Créer / modifier une opportunité", cells: ["non", "non", "oui", "oui"] },
-  { feature: "Publier une opportunité", cells: ["non", "non", "perm", "oui"] },
-  { feature: "Gérer les secteurs", cells: ["non", "non", "perm", "oui"] },
-  { feature: "Gérer les régions", cells: ["non", "non", "perm", "oui"] },
-  { feature: "Traiter les demandes d'intérêt", cells: ["non", "non", "oui", "oui"] },
-  { feature: "Consulter les statistiques", cells: ["non", "non", "oui", "oui"] },
-  { feature: "Gérer les utilisateurs et les rôles", cells: ["non", "non", "non", "oui"] },
-  { feature: "Consulter le journal d'activité", cells: ["non", "non", "non", "oui"] },
+const MATRIX: { feature: string; cells: [Cell, Cell, Cell, Cell, Cell] }[] = [
+  { feature: "Consulter les opportunités", cells: ["oui", "oui", "oui", "oui", "oui"] },
+  { feature: "Rechercher et utiliser les filtres", cells: ["oui", "oui", "oui", "oui", "oui"] },
+  { feature: "Consulter la carte", cells: ["oui", "oui", "oui", "oui", "oui"] },
+  { feature: "Créer un compte (investisseur ou porteur)", cells: ["oui", "non", "non", "non", "non"] },
+  { feature: "Ajouter aux favoris", cells: ["non", "oui", "non", "non", "non"] },
+  { feature: "Envoyer une demande d'intérêt", cells: ["non", "oui", "non", "non", "non"] },
+  { feature: "Consulter ses demandes", cells: ["non", "oui", "non", "non", "non"] },
+  { feature: "Déposer et suivre ses projets", cells: ["non", "non", "oui", "non", "non"] },
+  { feature: "Créer / modifier une opportunité", cells: ["non", "non", "non", "oui", "oui"] },
+  { feature: "Publier une opportunité", cells: ["non", "non", "non", "perm", "oui"] },
+  { feature: "Gérer les secteurs", cells: ["non", "non", "non", "perm", "oui"] },
+  { feature: "Gérer les régions", cells: ["non", "non", "non", "perm", "oui"] },
+  { feature: "Traiter les demandes d'intérêt", cells: ["non", "non", "non", "oui", "oui"] },
+  { feature: "Consulter les statistiques", cells: ["non", "non", "non", "oui", "oui"] },
+  { feature: "Gérer les utilisateurs et les rôles", cells: ["non", "non", "non", "non", "oui"] },
+  { feature: "Consulter le journal d'activité", cells: ["non", "non", "non", "non", "oui"] },
 ];
-const ROLES_HEAD = ["Visiteur", "Investisseur", "Agent EDBM", "Administrateur"];
+const ROLES_HEAD = ["Visiteur", "Investisseur", "Porteur de projet", "Agent EDBM", "Administrateur"];
 
 function MatrixCell({ v }: { v: Cell }) {
   if (v === "oui") return <Check className="mx-auto size-4 text-emerald-600" aria-label="Autorisé" />;
@@ -109,7 +110,7 @@ export function RolesView() {
 
       <Panel title="Matrice des rôles" icon={Shield} description="Section 7 du cahier des charges — appliquée côté serveur sur chaque action." bodyClassName="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
               <tr className="label-caps border-b bg-muted/50 text-muted-foreground">
                 <th className="px-5 py-3 text-left">Fonctionnalité</th>

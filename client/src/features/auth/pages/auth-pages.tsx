@@ -7,18 +7,21 @@ import { postLoginPath } from "@/lib/auth-redirect";
 import { AuthShell } from "../components/auth-shell";
 import { LoginForm } from "../components/login-form";
 import { ForgotPasswordForm, ResetPasswordForm } from "../components/password-forms";
-import { SignupForm } from "../components/signup-form";
+import { type AccountType, SignupForm } from "../components/signup-form";
 
 // Un utilisateur déjà connecté est renvoyé vers son espace (ou la page demandée)
 function GuestOnly({ children }: { children: React.ReactNode }) {
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, isRefetching } = useSession();
   const [params] = useSearchParams();
   // Retour du lien de confirmation d'adresse : la session vient d'être ouverte
   const verified = !!session && params.get("verifie") === "1" && !params.get("error");
   useEffect(() => {
     if (verified) toast.success("Adresse e-mail confirmée : bienvenue sur votre espace investisseur");
   }, [verified]);
-  if (isPending) return <Skeleton className="h-72" />;
+  // Squelette au premier chargement seulement : après une inscription ou une connexion, Better Auth
+  // recharge la session (isPending repasse à true) et démonter le formulaire effacerait son état
+  // (écran « Confirmez votre adresse e-mail », étape en cours)
+  if (isPending && !isRefetching) return <Skeleton className="h-72" />;
   if (session) return <Navigate to={postLoginPath(params.get("next"), session.user.role)} replace />;
   return children;
 }
@@ -34,12 +37,28 @@ export function LoginPage() {
   );
 }
 
+// /inscription?type=porteur présélectionne le compte porteur de projet
 export function SignupPage() {
+  const [params, setParams] = useSearchParams();
+  const accountType: AccountType = params.get("type") === "porteur" ? "porteur" : "investisseur";
+  const setAccountType = (type: AccountType) => {
+    const nextParams = new URLSearchParams(params);
+    if (type === "porteur") nextParams.set("type", "porteur");
+    else nextParams.delete("type");
+    setParams(nextParams, { replace: true });
+  };
+  const porteur = accountType === "porteur";
   return (
-    <AuthShell title="Créer un compte investisseur" description="Gratuit, en moins d'une minute. Vous pourrez compléter votre profil d'entreprise ensuite.">
+    <AuthShell
+      variant={accountType}
+      title={porteur ? "Déposer un projet en ligne" : "Créer un compte investisseur"}
+      description={porteur
+        ? "Vous ne pouvez pas venir à l'antenne ? Créez votre compte gratuit et présentez votre projet à l'EDBM depuis chez vous."
+        : "Gratuit, en moins d'une minute. Vous pourrez compléter votre profil d'entreprise ensuite."}
+    >
       <title>Créer un compte — EDBM Toliara</title>
       <GuestOnly>
-        <SignupForm />
+        <SignupForm accountType={accountType} onAccountTypeChange={setAccountType} />
       </GuestOnly>
     </AuthShell>
   );

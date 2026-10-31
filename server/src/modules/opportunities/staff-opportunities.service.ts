@@ -26,7 +26,7 @@ const STATUS_LABELS: Record<OpportunityStatus, string> = {
 };
 
 // Référence lisible : OPP-ATS-<année>-<numéro sur 3 chiffres>
-async function nextReference() {
+export async function nextReference() {
   const year = new Date().getFullYear();
   const [{ n }] = await db
     .select({ n: sql<number>`count(*)::int` })
@@ -52,6 +52,7 @@ export async function list(input: StaffListQuery) {
         createdAt: opportunities.createdAt,
         updatedAt: opportunities.updatedAt,
         createdBy: user.name,
+        createdByRole: user.role,
         commune: communes.name,
         documents: sql<number>`(select count(*) from opportunity_documents d where d.opportunity_id = ${opportunities.id})::int`,
         media: sql<number>`(select count(*) from opportunity_media m where m.opportunity_id = ${opportunities.id})::int`,
@@ -92,6 +93,13 @@ export async function byId(id: string, actor: Actor) {
       district: districts.name,
       commune: communes.name,
       createdByName: user.name,
+      author: {
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        company: investorProfiles.company,
+      },
     })
     .from(opportunities)
     .innerJoin(sectors, eq(sectors.id, opportunities.sectorId))
@@ -99,6 +107,7 @@ export async function byId(id: string, actor: Actor) {
     .leftJoin(districts, eq(districts.id, opportunities.districtId))
     .leftJoin(communes, eq(communes.id, opportunities.communeId))
     .leftJoin(user, eq(user.id, opportunities.createdBy))
+    .leftJoin(investorProfiles, eq(investorProfiles.userId, opportunities.createdBy))
     .where(eq(opportunities.id, id))
     .limit(1);
   if (!row) throw new HttpError(404, "Opportunité introuvable");
@@ -132,6 +141,8 @@ export async function byId(id: string, actor: Actor) {
     district: row.district,
     commune: row.commune,
     createdByName: row.createdByName,
+    // Coordonnées du porteur de projet (projets déposés en ligne) ; null pour un projet saisi par l'EDBM
+    submitter: row.author?.role === "porteur" ? row.author : null,
     media,
     documents: documents.map((d) => ({ ...d.d, uploadedByName: d.uploadedByName })),
     stats,
@@ -167,7 +178,7 @@ export async function update(id: string, input: OpportunityInput, userId: string
 }
 
 // Étape 5 (section 18) : brouillon, soumission, validation, publication, suspension, archivage
-export async function changeStatus(id: string, to: OpportunityStatus, actor: Actor) {
+export async function changeStatus(id: string, to: OpportunityStatus, actor: Actor, note?: string) {
   const [before] = await db.select().from(opportunities).where(eq(opportunities.id, id)).limit(1);
   if (!before) throw new HttpError(404, "Opportunité introuvable");
   if (!canTransition(before.status, to)) {
@@ -185,7 +196,12 @@ export async function changeStatus(id: string, to: OpportunityStatus, actor: Act
   const label = STATUS_LABELS[to];
   const link = `/edbm/opportunites/${row.id}`;
 
-  if (to === "en_verification") {
+  const [author] = await db.select({ role: user.role }).from(user).where(eq(user.id, before.createdBy)).limit(1);
+  if (author?.role === "porteur") {
+    // Projet déposé en ligne : le porteur suit chaque étape dans son espace et par e-mail
+    const message = porteurMessage(to, row);
+    if (message) await notify(before.createdBy, message, { email: true, quote: note || undefined });
+  } else if (to === "en_verification") {
     await notifyStaff({ title: "Opportunité soumise à validation", content: `« ${row.title} » attend une validation.`, link }, actor.id);
   } else if (before.createdBy !== actor.id) {
     // Section 26 : informer l'auteur des changements importants
@@ -203,8 +219,31 @@ export async function changeStatus(id: string, to: OpportunityStatus, actor: Act
       { title: "Nouvelle opportunité dans votre secteur", content: `« ${row.title} » vient d'être publiée.`, link: `/opportunites/${row.slug}` },
     );
   }
-  await logAudit({ userId: actor.id, action: "opportunity.status", entity: "opportunity", entityId: id, details: { from: before.status, status: to } });
+  await logAudit({ userId: actor.id, action: "opportunity.status", entity: "opportunity", entityId: id, details: { from: before.status, status: to, note: note || undefined } });
   return row;
+}
+
+// Message adressé au porteur de projet pour chaque décision de l'EDBM
+function porteurMessage(to: OpportunityStatus, o: { id: string; title: string; slug: string }) {
+  const link = `/porteur/projets/${o.id}`;
+  switch (to) {
+    case "brouillon":
+      return {
+        title: "Votre projet nécessite des compléments",
+        content: `L'EDBM vous renvoie « ${o.title} » pour compléments. Modifiez-le dans votre espace puis soumettez-le à nouveau.`,
+        link,
+      };
+    case "validee":
+      return { title: "Votre projet a été validé", content: `« ${o.title} » a été validé par l'EDBM et sera bientôt publié.`, link };
+    case "publiee":
+      return { title: "Votre projet est en ligne", content: `« ${o.title} » est publié dans le catalogue des opportunités.`, link: `/opportunites/${o.slug}` };
+    case "suspendue":
+      return { title: "Votre projet est suspendu", content: `« ${o.title} » n'est temporairement plus visible dans le catalogue.`, link };
+    case "archivee":
+      return { title: "Votre projet a été archivé", content: `« ${o.title} » a été archivé par l'EDBM.`, link };
+    default:
+      return null;
+  }
 }
 
 // Suppression définitive : brouillons et archives uniquement, par l'auteur ou un administrateur

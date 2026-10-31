@@ -26,7 +26,7 @@ export const update = async (req: Request, res: Response) => {
 };
 
 export const changeStatus = async (req: Request, res: Response) => {
-  res.json(await service.changeStatus(res.locals.params.id, req.body.status, req.user!));
+  res.json(await service.changeStatus(res.locals.params.id, req.body.status, req.user!, req.body.note));
 };
 
 export const remove = async (req: Request, res: Response) => {

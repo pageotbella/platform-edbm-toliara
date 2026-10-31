@@ -53,7 +53,7 @@ export function LoginForm() {
       <p className="text-center text-sm text-muted-foreground">
         Pas encore de compte ?{" "}
         <Link to={next ? `/inscription?next=${encodeURIComponent(next)}` : "/inscription"} className="font-semibold text-primary hover:underline">
-          Créer un compte investisseur
+          Créer un compte
         </Link>
       </p>
     </form>

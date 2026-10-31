@@ -124,6 +124,7 @@ export async function admin() {
       active: sum((r) => r.status === "actif"),
       inactive: sum((r) => r.status !== "actif"),
       investisseur: sum((r) => r.role === "investisseur"),
+      porteur: sum((r) => r.role === "porteur"),
       agent: sum((r) => r.role === "agent"),
       admin: sum((r) => r.role === "admin"),
     },

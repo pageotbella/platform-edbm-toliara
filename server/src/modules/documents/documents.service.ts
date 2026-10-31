@@ -1,5 +1,5 @@
 import { and, asc, count, desc, eq, ilike, or, sql } from "drizzle-orm";
-import { DOCUMENT_TYPES, STAFF_ROLES, type Role } from "@/config/constants";
+import { DOCUMENT_TYPES, PORTEUR_FILE_STATUSES, STAFF_ROLES, type Role } from "@/config/constants";
 import { db } from "@/db";
 import { opportunities, opportunityDocuments, opportunityMedia, user } from "@/db/schema";
 import { logAudit } from "@/lib/audit";
@@ -8,9 +8,29 @@ import { checkFile, deleteUpload, saveUpload, uploadPath } from "@/middlewares/u
 import { HttpError } from "@/utils/http-error";
 import type { DocumentListQuery, UploadBody } from "./documents.schemas";
 
+const isStaff = (actor: Actor) => STAFF_ROLES.includes(actor.role as Role);
+
+/**
+ * Le personnel gère les fichiers de toutes les opportunités ; un porteur de projet seulement ceux
+ * de ses propres projets, tant qu'ils sont en brouillon ou en vérification.
+ */
+async function assertCanEditFiles(opportunityId: string, actor: Actor) {
+  if (isStaff(actor)) return;
+  const [opp] = await db
+    .select({ createdBy: opportunities.createdBy, status: opportunities.status })
+    .from(opportunities)
+    .where(eq(opportunities.id, opportunityId))
+    .limit(1);
+  if (!opp || opp.createdBy !== actor.id) throw new HttpError(404, "Opportunité introuvable");
+  if (!PORTEUR_FILE_STATUSES.includes(opp.status)) {
+    throw new HttpError(400, "Ce projet n'est plus modifiable : contactez l'EDBM pour changer ses fichiers.");
+  }
+}
+
 // ── Téléversement (section 33) ────────────────────────────────
 
-export async function upload(file: Express.Multer.File | undefined, body: UploadBody, userId: string) {
+export async function upload(file: Express.Multer.File | undefined, body: UploadBody, actor: Actor) {
+  const userId = actor.id;
   const { ext, mime } = checkFile(file, body.kind);
   const [opp] = await db
     .select({ id: opportunities.id })
@@ -18,6 +38,7 @@ export async function upload(file: Express.Multer.File | undefined, body: Upload
     .where(eq(opportunities.id, body.opportunityId))
     .limit(1);
   if (!opp) throw new HttpError(404, "Opportunité introuvable");
+  await assertCanEditFiles(opp.id, actor);
 
   const fileKey = await saveUpload(file!, ext);
   const original = file!.originalname;
@@ -40,7 +61,8 @@ export async function upload(file: Express.Multer.File | undefined, body: Upload
   const type = (DOCUMENT_TYPES as readonly string[]).includes(body.type ?? "") ? body.type! : "Document complémentaire";
   const [row] = await db
     .insert(opportunityDocuments)
-    .values({ opportunityId: opp.id, fileKey, name: title, type, mimeType: mime, isPublic: body.isPublic, uploadedBy: userId })
+    // Les pièces d'un porteur restent réservées aux membres connectés : l'EDBM décide de leur diffusion
+    .values({ opportunityId: opp.id, fileKey, name: title, type, mimeType: mime, isPublic: isStaff(actor) && body.isPublic, uploadedBy: userId })
     .returning();
   await logAudit({
     userId, action: "document.upload", entity: "opportunity_document", entityId: row.id,
@@ -52,24 +74,26 @@ export async function upload(file: Express.Multer.File | undefined, body: Upload
 // Un fichier n'est servi que s'il est référencé en base, avec les mêmes règles que la fiche :
 // opportunité non publiée → personnel uniquement ; document privé → utilisateurs connectés
 export async function resolveFile(key: string, viewer: Actor | undefined) {
-  const staff = !!viewer && STAFF_ROLES.includes(viewer.role as Role);
+  const staff = !!viewer && isStaff(viewer);
 
   const [doc] = await db
-    .select({ isPublic: opportunityDocuments.isPublic, status: opportunities.status, name: opportunityDocuments.name })
+    .select({ isPublic: opportunityDocuments.isPublic, status: opportunities.status, createdBy: opportunities.createdBy, name: opportunityDocuments.name })
     .from(opportunityDocuments)
     .innerJoin(opportunities, eq(opportunities.id, opportunityDocuments.opportunityId))
     .where(eq(opportunityDocuments.fileKey, key));
   const [media] = doc
     ? []
     : await db
-        .select({ status: opportunities.status })
+        .select({ status: opportunities.status, createdBy: opportunities.createdBy })
         .from(opportunityMedia)
         .innerJoin(opportunities, eq(opportunities.id, opportunityMedia.opportunityId))
         .where(eq(opportunityMedia.fileKey, key));
 
   const found = doc ?? media;
   if (!found) throw new HttpError(404, "Fichier introuvable");
-  if (found.status !== "publiee" && !staff) throw new HttpError(404, "Fichier introuvable");
+  // Le porteur de projet voit toujours les fichiers de ses propres projets
+  const owner = !!viewer && found.createdBy === viewer.id;
+  if (found.status !== "publiee" && !staff && !owner) throw new HttpError(404, "Fichier introuvable");
   if (doc && !doc.isPublic && !viewer) throw new HttpError(401, "Connectez-vous pour consulter ce document");
 
   return { path: uploadPath(key), downloadName: doc?.name };
@@ -149,7 +173,14 @@ export async function updateDocument(
   await logAudit({ userId, action: "document.update", entity: "opportunity_document", entityId: id, details: data });
 }
 
-export async function removeDocument(id: string, userId: string) {
+export async function removeDocument(id: string, actor: Actor) {
+  const userId = actor.id;
+  const [doc] = await db
+    .select({ opportunityId: opportunityDocuments.opportunityId })
+    .from(opportunityDocuments)
+    .where(eq(opportunityDocuments.id, id));
+  if (!doc) throw new HttpError(404, "Document introuvable");
+  await assertCanEditFiles(doc.opportunityId, actor);
   const [row] = await db.delete(opportunityDocuments).where(eq(opportunityDocuments.id, id)).returning();
   if (!row) throw new HttpError(404, "Document introuvable");
   await deleteUpload(row.fileKey);
@@ -161,14 +192,23 @@ export async function removeDocument(id: string, userId: string) {
 
 // ── Galerie d'images (section 13 « Supports ») ────────────────
 
-export async function updateMedia(id: string, title: string) {
+async function mediaOpportunity(id: string) {
+  const [m] = await db.select({ opportunityId: opportunityMedia.opportunityId }).from(opportunityMedia).where(eq(opportunityMedia.id, id));
+  if (!m) throw new HttpError(404, "Image introuvable");
+  return m.opportunityId;
+}
+
+export async function updateMedia(id: string, title: string, actor: Actor) {
+  await assertCanEditFiles(await mediaOpportunity(id), actor);
   const [row] = await db.update(opportunityMedia).set({ title: title || null }).where(eq(opportunityMedia.id, id)).returning();
   if (!row) throw new HttpError(404, "Image introuvable");
 }
 
-export async function setCover(id: string, userId: string) {
+export async function setCover(id: string, actor: Actor) {
+  const userId = actor.id;
   const [m] = await db.select().from(opportunityMedia).where(eq(opportunityMedia.id, id)).limit(1);
   if (!m) throw new HttpError(404, "Image introuvable");
+  await assertCanEditFiles(m.opportunityId, actor);
   await db.transaction(async (tx) => {
     await tx.update(opportunityMedia).set({ isCover: false }).where(eq(opportunityMedia.opportunityId, m.opportunityId));
     await tx.update(opportunityMedia).set({ isCover: true }).where(eq(opportunityMedia.id, m.id));
@@ -176,7 +216,9 @@ export async function setCover(id: string, userId: string) {
   await logAudit({ userId, action: "media.cover", entity: "opportunity_media", entityId: m.id, details: { opportunityId: m.opportunityId } });
 }
 
-export async function removeMedia(id: string, userId: string) {
+export async function removeMedia(id: string, actor: Actor) {
+  const userId = actor.id;
+  await assertCanEditFiles(await mediaOpportunity(id), actor);
   const [row] = await db.delete(opportunityMedia).where(eq(opportunityMedia.id, id)).returning();
   if (!row) throw new HttpError(404, "Image introuvable");
   await deleteUpload(row.fileKey);

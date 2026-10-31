@@ -93,6 +93,20 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    // Espace porteur de projet : dépôt en ligne et suivi
+    path: "/porteur",
+    element: <ProtectedRoute roles={["porteur"]} space="porteur" />,
+    hydrateFallbackElement: <PageSkeleton />,
+    children: [
+      index(async () => (await import("@/features/porteur/components/my-projects")).MyProjects),
+      page("projets/nouveau", async () => (await import("@/features/porteur/components/project-form")).NewProjectPage),
+      page("projets/:id", async () => (await import("@/features/porteur/components/project-page")).ProjectPage),
+      page("projets/:id/modifier", async () => (await import("@/features/porteur/components/project-form")).EditProjectPage),
+      page("notifications", async () => (await views.notifications()).NotificationsView),
+      page("profil", async () => (await views.profile()).ProfileView),
+    ],
+  },
+  {
     // Espace EDBM (agents et administrateurs)
     path: "/edbm",
     element: <ProtectedRoute roles={["agent", "admin"]} space="edbm" />,

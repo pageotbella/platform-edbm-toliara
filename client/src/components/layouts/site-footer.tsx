@@ -32,6 +32,7 @@ export function SiteFooter() {
           <ul className="space-y-2.5 text-sm text-muted-foreground">
             <li><Link to="/inscription" className="hover:text-primary">Créer un compte investisseur</Link></li>
             <li><Link to="/investisseur/demandes" className="hover:text-primary">Suivre mes demandes</Link></li>
+            <li><Link to="/inscription?type=porteur" className="hover:text-primary">Déposer un projet en ligne</Link></li>
             <li><Link to="/a-propos" className="hover:text-primary">Rôle de l&apos;EDBM</Link></li>
             <li><Link to="/contact" className="hover:text-primary">Contacter l&apos;antenne</Link></li>
           </ul>

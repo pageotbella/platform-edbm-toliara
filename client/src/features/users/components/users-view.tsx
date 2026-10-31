@@ -29,6 +29,7 @@ type Perms = { canPublish: boolean; canManageSectors: boolean; canManageRegions:
 const NO_PERMS: Perms = { canPublish: false, canManageSectors: false, canManageRegions: false };
 const ROLE_TONE: Record<Role, string> = {
   investisseur: "bg-emerald-50 text-emerald-800",
+  porteur: "bg-accent text-primary",
   agent: "bg-blue-50 text-blue-800",
   admin: "bg-amber-50 text-amber-800",
 };
@@ -102,6 +103,7 @@ export function UsersView({ initialCreate = false, initialStatus }: { initialCre
   const tabs: { label: string; role: Role | null; status: "desactive" | null; n?: number }[] = [
     { label: "Tous les comptes", role: null, status: null, n: c?.all },
     { label: "Investisseurs", role: "investisseur", status: null, n: c?.investisseur },
+    { label: "Porteurs de projet", role: "porteur", status: null, n: c?.porteur },
     { label: "Agents EDBM", role: "agent", status: null, n: c?.agent },
     { label: "Administrateurs", role: "admin", status: null, n: c?.admin },
     { label: "Désactivés", role: null, status: "desactive", n: c?.desactive },
@@ -191,11 +193,11 @@ export function UsersView({ initialCreate = false, initialStatus }: { initialCre
                           </p>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-xs">{r === "investisseur" ? (<><p className="font-medium">{u.company ?? "—"}</p><p className="text-muted-foreground">{u.country ?? ""}</p></>) : <span className="text-muted-foreground">EDBM Toliara</span>}</td>
+                      <td className="px-3 py-3 text-xs">{r === "investisseur" || r === "porteur" ? (<><p className="font-medium">{u.company ?? "—"}</p><p className="text-muted-foreground">{u.country ?? ""}</p></>) : <span className="text-muted-foreground">EDBM Toliara</span>}</td>
                       <td className="px-3 py-3 text-xs text-muted-foreground">
                         <p>Créé le {formatDate(u.createdAt)}</p>
                         <p>{u.lastActive ? `Actif ${timeAgo(u.lastActive)}` : "Jamais connecté"}</p>
-                        <p>{r === "investisseur" ? `${u.requests} demande(s)` : `${u.opportunities} opportunité(s)`}</p>
+                        <p>{r === "investisseur" ? `${u.requests} demande(s)` : r === "porteur" ? `${u.opportunities} projet(s) déposé(s)` : `${u.opportunities} opportunité(s)`}</p>
                       </td>
                       <td className="px-3 py-3">
                         {u.status === "actif"

@@ -8,6 +8,7 @@ import { notificationsRouter } from "@/modules/notifications/notifications.route
 import { opportunitiesRouter } from "@/modules/opportunities/opportunities.routes";
 import { staffOpportunitiesRouter } from "@/modules/opportunities/staff-opportunities.routes";
 import { permissionsRouter, staffRouter } from "@/modules/permissions/permissions.routes";
+import { porteurRouter } from "@/modules/porteur/porteur.routes";
 import { profileRouter } from "@/modules/profile/profile.routes";
 import { communesRouter, districtsRouter, regionsRouter } from "@/modules/regions/regions.routes";
 import { sectorsRouter } from "@/modules/sectors/sectors.routes";
@@ -31,6 +32,9 @@ apiRouter.use("/favorites", favoritesRouter);
 apiRouter.use("/interest-requests", interestRequestsRouter);
 apiRouter.use("/notifications", notificationsRouter);
 apiRouter.use("/profile", profileRouter);
+
+// Porteurs de projet
+apiRouter.use("/porteur", porteurRouter);
 
 // Espace EDBM et administration
 apiRouter.use("/staff/opportunities", staffOpportunitiesRouter);

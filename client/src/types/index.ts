@@ -136,6 +136,7 @@ export type StaffOpportunityRow = OpportunityCardData & {
   createdAt: string;
   updatedAt: string;
   createdBy: string | null;
+  createdByRole: string | null;
   commune: string | null;
   documents: number;
   media: number;
@@ -157,6 +158,8 @@ export type StaffOpportunity = OpportunityFields & {
   district: string | null;
   commune: string | null;
   createdByName: string | null;
+  /** Coordonnées du porteur pour un projet déposé en ligne, sinon null */
+  submitter: { name: string; email: string; phone: string | null; company: string | null } | null;
   media: OpportunityMedia[];
   documents: StaffDocument[];
   stats: { requests: number; views: number; favorites: number };
@@ -308,7 +311,7 @@ export type AuditRow = {
 };
 
 export type AdminStats = {
-  users: { total: number; active: number; inactive: number; investisseur: number; agent: number; admin: number };
+  users: { total: number; active: number; inactive: number; investisseur: number; porteur: number; agent: number; admin: number };
   opportunities: { total: number; published: number };
   sectors: { total: number; active: number };
   regions: { total: number; districts: number; communes: number };
@@ -343,9 +346,36 @@ export type UserRow = {
 };
 
 export type UserList = Paginated<UserRow> & {
-  counts: { all: number; investisseur: number; agent: number; admin: number; desactive: number };
+  counts: { all: number; investisseur: number; porteur: number; agent: number; admin: number; desactive: number };
 };
 
 export type AgentPermissions = Permissions & { id: string; name: string; email: string; status: string };
 
 export type AuditList = Paginated<AuditRow> & { entities: string[]; actors: { id: string; name: string }[] };
+
+// Espace porteur de projet
+export type PorteurProjectRow = OpportunityCardData & {
+  createdAt: string;
+  updatedAt: string;
+  documents: number;
+  media: number;
+  requests: number;
+};
+
+export type PorteurProjectStep = { status: OpportunityStatus; note: string | null; at: string };
+
+export type PorteurProject = Omit<OpportunityFields, "isFeatured" | "infrastructures" | "zoneAdvantages" | "createdBy"> & {
+  sector: string;
+  region: string;
+  district: string | null;
+  commune: string | null;
+  media: Pick<OpportunityMedia, "id" | "fileKey" | "title" | "isCover">[];
+  documents: { id: string; name: string; type: string | null; fileKey: string; createdAt: string }[];
+  history: PorteurProjectStep[];
+  /** Remarque de l'EDBM quand le projet lui a été renvoyé pour compléments */
+  lastNote: string | null;
+  canEdit: boolean;
+  canSubmit: boolean;
+  canEditFiles: boolean;
+  canDelete: boolean;
+};

@@ -60,7 +60,7 @@ export function ContactPage() {
             <dl className="mt-4 space-y-4 text-sm">
               <div><dt className="font-semibold">Comment suivre ma demande ?</dt><dd className="mt-1 text-muted-foreground">Dans votre espace investisseur, rubrique « Mes demandes », avec l&apos;historique de son état.</dd></div>
               <div><dt className="font-semibold">Certains documents sont verrouillés ?</dt><dd className="mt-1 text-muted-foreground">Ils sont réservés aux utilisateurs connectés : créez un compte gratuit pour y accéder.</dd></div>
-              <div><dt className="font-semibold">Vous portez un projet ?</dt><dd className="mt-1 text-muted-foreground">Contactez l&apos;antenne : un agent EDBM étudiera son inscription au catalogue.</dd></div>
+              <div><dt className="font-semibold">Vous portez un projet ?</dt><dd className="mt-1 text-muted-foreground">Déposez-le en ligne depuis votre <Link to="/inscription?type=porteur" className="font-semibold text-primary hover:underline">espace porteur de projet</Link>, sans vous déplacer : un agent EDBM étudiera son inscription au catalogue.</dd></div>
             </dl>
           </div>
         </div>

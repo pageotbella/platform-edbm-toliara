@@ -1,4 +1,4 @@
-import { ChevronDown, LayoutDashboard, LogOut, UserRound } from "lucide-react";
+import { ChevronDown, LayoutDashboard, LogOut, UserPlus, UserRound } from "lucide-react";
 import { Link } from "react-router-dom";
 import { buttonVariants } from "@/components/ui/button";
 import {
@@ -24,8 +24,9 @@ export function UserMenu({ compact = false }: { compact?: boolean }) {
         {!compact && (
           <Link to="/connexion" className={cn(buttonVariants({ variant: "ghost" }), "h-9")}>Se connecter</Link>
         )}
+        {/* L'inscription propose ensuite le choix investisseur / porteur de projet */}
         <Link to="/inscription" className={cn(buttonVariants(), "h-9 px-3")}>
-          <UserRound /> Espace investisseur
+          <UserPlus /> S&apos;inscrire
         </Link>
       </div>
     );

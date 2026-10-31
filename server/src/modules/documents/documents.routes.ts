@@ -11,16 +11,18 @@ import {
 export const documentsRouter = Router();
 
 const staff = requireRole("agent", "admin");
+// Fichiers d'un projet : le personnel, ou le porteur pour ses propres projets (vérifié dans le service)
+const filesEditor = requireRole("agent", "admin", "porteur");
 const byId = validate(idParamsSchema, "params");
 
-documentsRouter.post("/upload", staff, uploadSingle, validate(uploadBodySchema), controller.upload);
+documentsRouter.post("/upload", filesEditor, uploadSingle, validate(uploadBodySchema), controller.upload);
 documentsRouter.get("/files/*key", optionalAuth, validate(fileParamsSchema, "params"), controller.file);
 
 documentsRouter.get("/documents", staff, validate(listQuerySchema, "query"), controller.list);
 documentsRouter.get("/documents/recent", staff, controller.recent);
 documentsRouter.patch("/documents/:id", staff, byId, validate(documentUpdateSchema), controller.updateDocument);
-documentsRouter.delete("/documents/:id", staff, byId, controller.removeDocument);
+documentsRouter.delete("/documents/:id", filesEditor, byId, controller.removeDocument);
 
-documentsRouter.patch("/media/:id", staff, byId, validate(mediaUpdateSchema), controller.updateMedia);
-documentsRouter.post("/media/:id/cover", staff, byId, controller.setCover);
-documentsRouter.delete("/media/:id", staff, byId, controller.removeMedia);
+documentsRouter.patch("/media/:id", filesEditor, byId, validate(mediaUpdateSchema), controller.updateMedia);
+documentsRouter.post("/media/:id/cover", filesEditor, byId, controller.setCover);
+documentsRouter.delete("/media/:id", filesEditor, byId, controller.removeMedia);

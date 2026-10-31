@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import * as service from "./documents.service";
 
 export const upload = async (req: Request, res: Response) => {
-  res.status(201).json(await service.upload(req.file, req.body, req.user!.id));
+  res.status(201).json(await service.upload(req.file, req.body, req.user!));
 };
 
 export const file = async (req: Request, res: Response) => {
@@ -31,21 +31,21 @@ export const updateDocument = async (req: Request, res: Response) => {
 };
 
 export const removeDocument = async (req: Request, res: Response) => {
-  await service.removeDocument(res.locals.params.id, req.user!.id);
+  await service.removeDocument(res.locals.params.id, req.user!);
   res.status(204).end();
 };
 
 export const updateMedia = async (req: Request, res: Response) => {
-  await service.updateMedia(res.locals.params.id, req.body.title);
+  await service.updateMedia(res.locals.params.id, req.body.title, req.user!);
   res.status(204).end();
 };
 
 export const setCover = async (req: Request, res: Response) => {
-  await service.setCover(res.locals.params.id, req.user!.id);
+  await service.setCover(res.locals.params.id, req.user!);
   res.status(204).end();
 };
 
 export const removeMedia = async (req: Request, res: Response) => {
-  await service.removeMedia(res.locals.params.id, req.user!.id);
+  await service.removeMedia(res.locals.params.id, req.user!);
   res.status(204).end();
 };

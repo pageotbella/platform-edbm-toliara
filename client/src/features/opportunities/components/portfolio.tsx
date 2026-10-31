@@ -156,6 +156,7 @@ export function Portfolio({ base = "/edbm" }: { base?: string }) {
                       <td className="px-3 py-3 text-xs text-muted-foreground">
                         {formatDate(o.updatedAt)}
                         <span className="block">{o.createdBy ?? ""}</span>
+                        {o.createdByRole === "porteur" && <span className="label-caps mt-0.5 inline-block rounded bg-accent px-1.5 py-0.5 text-[9px] text-primary">Déposé en ligne</span>}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <DropdownMenu>

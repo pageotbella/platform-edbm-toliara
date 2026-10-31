@@ -74,6 +74,7 @@ export async function list(input: UserListQuery) {
     counts: {
       all: sum(() => true),
       investisseur: sum((r) => r.role === "investisseur"),
+      porteur: sum((r) => r.role === "porteur"),
       agent: sum((r) => r.role === "agent"),
       admin: sum((r) => r.role === "admin"),
       desactive: sum((r) => r.status === "desactive"),
@@ -81,7 +82,7 @@ export async function list(input: UserListQuery) {
   };
 }
 
-const ROLE_LABELS = { investisseur: "Investisseur", agent: "Agent EDBM", admin: "Administrateur" } as const;
+const ROLE_LABELS = { investisseur: "Investisseur", porteur: "Porteur de projet", agent: "Agent EDBM", admin: "Administrateur" } as const;
 const WELCOME_LINK_TTL = 72 * 3600_000;
 
 /**

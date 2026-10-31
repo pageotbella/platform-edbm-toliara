@@ -54,6 +54,14 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        // Inscription libre : investisseur par défaut, ou porteur de projet si le formulaire le demande.
+        // Le rôle reste fixé par le serveur (input: false) : seule la valeur « porteur » est reconnue.
+        before: async (u, ctx) => {
+          const type = (ctx?.body as { accountType?: unknown } | undefined)?.accountType;
+          if (ctx?.path === "/sign-up/email" && type === "porteur") {
+            return { data: { ...u, role: "porteur" } };
+          }
+        },
         after: async (u) => {
           await db.insert(schema.investorProfiles).values({ userId: u.id }).onConflictDoNothing();
         },

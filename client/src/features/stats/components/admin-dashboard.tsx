@@ -15,7 +15,7 @@ import { useAdminStats } from "@/features/stats/hooks";
 import { actionLabel, detailSummary } from "@/features/audit-logs/audit-labels";
 
 const QUICK = [
-  { href: "/admin/utilisateurs?nouveau=1", label: "Créer un utilisateur", text: "Agent EDBM, administrateur ou investisseur", icon: UserPlus },
+  { href: "/admin/utilisateurs?nouveau=1", label: "Créer un utilisateur", text: "Agent EDBM, administrateur, investisseur ou porteur", icon: UserPlus },
   { href: "/admin/roles", label: "Configurer les permissions", text: "Publication, secteurs, régions", icon: KeyRound },
   { href: "/admin/secteurs", label: "Gérer les secteurs", text: "Ajouter, modifier, désactiver", icon: Shapes },
   { href: "/admin/parametres", label: "Paramètres système", text: "Coordonnées de l'antenne", icon: Settings },
@@ -43,8 +43,9 @@ export function AdminDashboard() {
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="Utilisateurs" value={s.users.total} icon={Users}
-          hint={<span className="grid grid-cols-3 gap-2 text-center">
+          hint={<span className="grid grid-cols-4 gap-2 text-center">
             <span><b className="block text-foreground">{s.users.investisseur}</b>investisseurs</span>
+            <span><b className="block text-foreground">{s.users.porteur}</b>porteurs</span>
             <span><b className="block text-foreground">{s.users.agent}</b>agents</span>
             <span><b className="block text-foreground">{s.users.admin}</b>admins</span>
           </span>} />

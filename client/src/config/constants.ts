@@ -1,11 +1,12 @@
 // Copie client des énumérations serveur (server/src/db/schema/domain.ts) :
 // mettre les deux à jour quand un statut change.
 
-export const ROLES = ["investisseur", "agent", "admin"] as const;
+export const ROLES = ["investisseur", "porteur", "agent", "admin"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABELS: Record<Role, string> = {
   investisseur: "Investisseur",
+  porteur: "Porteur de projet",
   agent: "Agent EDBM",
   admin: "Administrateur",
 };
@@ -13,6 +14,7 @@ export const ROLE_LABELS: Record<Role, string> = {
 // Espace d'arrivée après connexion
 export const ROLE_HOME: Record<Role, string> = {
   investisseur: "/investisseur",
+  porteur: "/porteur",
   agent: "/edbm",
   admin: "/admin",
 };

@@ -1,7 +1,8 @@
 import { spaceLabel } from "@/components/layouts/nav-config";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  ArrowLeft, ArrowRight, Check, CheckCircle2, Circle, ExternalLink, Eye, FileText, Heart, Save, Send,
+  ArrowLeft, ArrowRight, Building2, Check, CheckCircle2, Circle, ExternalLink, Eye, FileText, Heart, Mail, Phone, Save, Send,
+  Undo2, UserRound,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
@@ -17,6 +18,7 @@ import { Panel } from "@/components/common/panel";
 import { SimpleSelect } from "@/components/common/simple-select";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -90,6 +92,8 @@ export function OpportunityEditor({ id, initialStep = 0, base = "/edbm" }: { id?
   const update = useUpdateOpportunity();
   const changeStatus = useChangeStatus();
   const saving = create.isPending || update.isPending;
+  // Renvoi au porteur de projet : la remarque lui indique les compléments attendus
+  const [returnNote, setReturnNote] = useState<string | null>(null);
 
   /** Enregistre le formulaire ; crée le brouillon s'il n'existe pas encore. */
   const save = (after?: (savedId: string) => void) =>
@@ -123,10 +127,12 @@ export function OpportunityEditor({ id, initialStep = 0, base = "/edbm" }: { id?
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
 
-  const transition = async (to: OpportunityStatus) => {
+  const transition = async (to: OpportunityStatus, note?: string) => {
     if (!id) return;
+    if (o?.submitter && to === "brouillon" && note === undefined) return setReturnNote("");
     if (isDirty) await save();
-    await changeStatus.mutateAsync({ id, status: to }).catch(() => undefined);
+    await changeStatus.mutateAsync({ id, status: to, note }).catch(() => undefined);
+    setReturnNote(null);
     await detail.refetch();
   };
 
@@ -342,7 +348,8 @@ export function OpportunityEditor({ id, initialStep = 0, base = "/edbm" }: { id?
                         className="h-10 px-4"
                         onClick={() => transition(to)}
                       >
-                        {to === "en_verification" ? <Send /> : to === "publiee" ? <Eye /> : null} {ACTION_LABELS[to]}
+                        {to === "en_verification" ? <Send /> : to === "publiee" ? <Eye /> : null}{" "}
+                        {o.submitter && to === "brouillon" ? "Renvoyer au porteur pour compléments" : ACTION_LABELS[to]}
                       </Button>
                     ))}
                   </div>
@@ -380,6 +387,17 @@ export function OpportunityEditor({ id, initialStep = 0, base = "/edbm" }: { id?
         </form>
 
         <aside className="space-y-6">
+          {o?.submitter && (
+            <Panel title="Porteur de projet" description="Projet déposé en ligne" icon={UserRound}>
+              <ul className="space-y-2 text-sm">
+                <li className="font-semibold">{o.submitter.name}</li>
+                {o.submitter.company && <li className="flex items-center gap-2 text-muted-foreground"><Building2 className="size-4" /> {o.submitter.company}</li>}
+                <li><a href={`mailto:${o.submitter.email}`} className="flex items-center gap-2 text-primary hover:underline"><Mail className="size-4" /> {o.submitter.email}</a></li>
+                {o.submitter.phone && <li><a href={`tel:${o.submitter.phone.replace(/\s/g, "")}`} className="flex items-center gap-2 text-primary hover:underline"><Phone className="size-4" /> {o.submitter.phone}</a></li>}
+              </ul>
+              <p className="mt-3 text-xs text-muted-foreground">Le porteur est informé par e-mail de chaque décision. Pour lui demander des compléments, renvoyez le projet en brouillon avec une remarque.</p>
+            </Panel>
+          )}
           {o && (
             <Panel title="Dossier" icon={FileText}>
               <dl className="space-y-2 text-sm">
@@ -408,6 +426,26 @@ export function OpportunityEditor({ id, initialStep = 0, base = "/edbm" }: { id?
           </Panel>
         </aside>
       </div>
+
+      <Dialog open={returnNote !== null} onOpenChange={(open) => !open && setReturnNote(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Renvoyer le projet au porteur</DialogTitle>
+            <DialogDescription>
+              Le projet repasse en brouillon : {o?.submitter?.name} pourra le corriger puis le soumettre à nouveau. Votre remarque lui est envoyée par e-mail.
+            </DialogDescription>
+          </DialogHeader>
+          <FormField label="Compléments attendus" htmlFor="return-note" required hint="Soyez précis : pièces manquantes, informations à préciser…">
+            <Textarea id="return-note" rows={5} value={returnNote ?? ""} onChange={(e) => setReturnNote(e.target.value)} autoFocus />
+          </FormField>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReturnNote(null)}>Annuler</Button>
+            <Button disabled={changeStatus.isPending || (returnNote ?? "").trim().length < 5} onClick={() => transition("brouillon", (returnNote ?? "").trim())}>
+              <Undo2 /> Renvoyer au porteur
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

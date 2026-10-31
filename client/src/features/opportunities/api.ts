@@ -24,7 +24,8 @@ export const opportunitiesApi = {
   options: () => get<OpportunityOption[]>("/staff/opportunities/options"),
   create: (data: OpportunityInput) => post<{ id: string; reference: string | null }>("/staff/opportunities", data),
   update: ({ id, data }: { id: string; data: OpportunityInput }) => put(`/staff/opportunities/${id}`, data),
-  changeStatus: ({ id, status }: { id: string; status: OpportunityStatus }) =>
-    patch<{ id: string; status: OpportunityStatus }>(`/staff/opportunities/${id}/status`, { status }),
+  // `note` : remarque transmise au porteur de projet (projets déposés en ligne)
+  changeStatus: ({ id, status, note }: { id: string; status: OpportunityStatus; note?: string }) =>
+    patch<{ id: string; status: OpportunityStatus }>(`/staff/opportunities/${id}/status`, { status, note }),
   remove: ({ id }: { id: string }) => del(`/staff/opportunities/${id}`),
 };
