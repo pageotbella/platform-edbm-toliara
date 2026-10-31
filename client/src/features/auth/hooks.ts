@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { signOut } from "@/lib/auth-client";
 import { type ApiMutationOptions, type QueryOptions, useApiMutation } from "@/lib/query";
 import type { Profile } from "@/types";
@@ -16,7 +17,12 @@ export function useSignOut() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   return async () => {
-    await signOut();
+    // Better Auth ne lève pas d’exception : un refus (origine non autorisée, serveur arrêté…) laisse la session ouverte
+    const { error } = await signOut();
+    if (error) {
+      toast.error("La déconnexion a échoué. Réessayez ou rechargez la page.");
+      return;
+    }
     qc.clear();
     navigate("/", { replace: true });
   };

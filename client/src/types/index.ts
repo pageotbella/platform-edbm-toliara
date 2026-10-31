@@ -360,6 +360,8 @@ export type PorteurProjectRow = OpportunityCardData & {
   documents: number;
   media: number;
   requests: number;
+  /** Remarque de l'EDBM quand le projet a été renvoyé en brouillon */
+  pendingNote: string | null;
 };
 
 export type PorteurProjectStep = { status: OpportunityStatus; note: string | null; at: string };
@@ -378,4 +380,29 @@ export type PorteurProject = Omit<OpportunityFields, "isFeatured" | "infrastruct
   canSubmit: boolean;
   canEditFiles: boolean;
   canDelete: boolean;
+};
+
+// ── Projets financés par les PTF (server/src/modules/partner-projects) ──
+
+export type PartnerProject = {
+  id: string;
+  title: string;
+  fullName: string | null;
+  donor: string;
+  implementer: string | null;
+  sectors: string | null;
+  duration: string | null;
+  startYear: number | null;
+  endYear: number | null;
+  funding: string | null;
+  amountUsd: number | null;
+  beneficiaries: string | null;
+  contact: string | null;
+  source: string | null;
+  notes: string | null;
+  regionId: string;
+  region: string;
+  isPublished: boolean;
+  createdAt: string;
+  updatedAt: string;
 };

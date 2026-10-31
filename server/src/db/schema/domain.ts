@@ -2,6 +2,7 @@ import {
   boolean,
   doublePrecision,
   index,
+  integer,
   jsonb,
   numeric,
   pgEnum,
@@ -139,6 +140,37 @@ export const opportunities = pgTable(
   (t) => [index().on(t.status), index().on(t.sectorId), index().on(t.regionId)],
 );
 
+// Projets financés par les partenaires techniques et financiers (PTF), déjà en cours dans la région :
+// rubrique d'information, distincte du catalogue d'opportunités (pas de demande d'intérêt)
+export const partnerProjects = pgTable(
+  "partner_projects",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    title: varchar({ length: 200 }).notNull(),
+    fullName: varchar({ length: 300 }),
+    donor: varchar({ length: 200 }).notNull(), // bailleur
+    implementer: text(), // organisme de mise en œuvre (MOD)
+    sectors: text(),
+    duration: text(),
+    startYear: integer(),
+    endYear: integer(),
+    funding: text(), // montant tel que communiqué (devise, répartition…)
+    amountUsd: numeric({ precision: 18, scale: 2, mode: "number" }),
+    beneficiaries: text(),
+    contact: text(), // coordonnées / point focal
+    source: text(),
+    notes: text(), // informations et documents pertinents
+    regionId: uuid()
+      .notNull()
+      .references(() => regions.id),
+    isPublished: boolean().default(true).notNull(),
+    createdBy: text().references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp().defaultNow().notNull().$onUpdate(() => new Date()),
+  },
+  (t) => [index().on(t.regionId)],
+);
+
 export const opportunityMedia = pgTable("opportunity_media", {
   id: uuid().defaultRandom().primaryKey(),
   opportunityId: uuid()
@@ -232,15 +264,20 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp().defaultNow().notNull(),
 });
 
-export const auditLogs = pgTable("audit_logs", {
-  id: uuid().defaultRandom().primaryKey(),
-  userId: text().references(() => user.id, { onDelete: "set null" }),
-  action: varchar({ length: 80 }).notNull(),
-  entity: varchar({ length: 80 }).notNull(),
-  entityId: text(),
-  details: jsonb(),
-  createdAt: timestamp().defaultNow().notNull(),
-});
+export const auditLogs = pgTable(
+  "audit_logs",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    userId: text().references(() => user.id, { onDelete: "set null" }),
+    action: varchar({ length: 80 }).notNull(),
+    entity: varchar({ length: 80 }).notNull(),
+    entityId: text(),
+    details: jsonb(),
+    createdAt: timestamp().defaultNow().notNull(),
+  },
+  // Historique d'une entité (statuts d'une demande, remarques sur un projet porteur)
+  (t) => [index().on(t.entity, t.entityId, t.createdAt)],
+);
 
 // Paramètres clé/valeur (clé `contact` : coordonnées affichées sur le portail)
 export const settings = pgTable("settings", {

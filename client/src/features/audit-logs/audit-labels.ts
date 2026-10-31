@@ -39,6 +39,11 @@ const ACTIONS: Record<string, string> = {
   "permission.update": "Modification des permissions",
   "profile.update": "Mise à jour du profil",
   "settings.update": "Modification des paramètres",
+  "partner_project.create": "Ajout d'un projet partenaire (PTF)",
+  "partner_project.update": "Modification d'un projet partenaire (PTF)",
+  "partner_project.publish": "Publication d'un projet partenaire (PTF)",
+  "partner_project.unpublish": "Retrait d'un projet partenaire (PTF)",
+  "partner_project.delete": "Suppression d'un projet partenaire (PTF)",
 };
 
 export const ENTITY_LABELS: Record<string, string> = {
@@ -52,6 +57,7 @@ export const ENTITY_LABELS: Record<string, string> = {
   commune: "Commune",
   user: "Utilisateur",
   settings: "Paramètres",
+  partner_project: "Projet partenaire (PTF)",
 };
 
 export const actionLabel = (a: string) => ACTIONS[a] ?? a;

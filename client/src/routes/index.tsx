@@ -35,6 +35,7 @@ const views = {
   requestPages: () => import("@/features/interest-requests/pages/request-pages"),
   sectors: () => import("@/features/sectors/components/sectors-view"),
   regions: () => import("@/features/regions/components/regions-view"),
+  partnerProjects: () => import("@/features/partner-projects/components/partner-projects-view"),
   stats: () => import("@/features/stats/components/stats-view"),
 };
 
@@ -49,6 +50,7 @@ function staffRoutes(base: "/edbm" | "/admin"): RouteObject[] {
     page("demandes/:id", async () => { const { StaffRequestPage } = await views.requestPages(); return () => <StaffRequestPage base={base} />; }),
     page("secteurs", async () => { const { SectorsView } = await views.sectors(); return () => <SectorsView base={base} />; }),
     page("regions", async () => { const { RegionsView } = await views.regions(); return () => <RegionsView base={base} />; }),
+    page("projets-partenaires", async () => { const { PartnerProjectsView } = await views.partnerProjects(); return () => <PartnerProjectsView base={base} />; }),
     page("statistiques", async () => { const { StatsView } = await views.stats(); return () => <StatsView base={base} />; }),
     page("notifications", async () => (await views.notifications()).NotificationsView),
     page("profil", async () => { const { ProfileView } = await views.profile(); return () => <ProfileView showCompany={false} />; }),
@@ -67,6 +69,7 @@ export const router = createBrowserRouter([
       { path: "/secteurs/:slug", element: <SectorPage /> },
       { path: "/regions", element: <RegionsPage /> },
       { path: "/regions/:id", element: <RegionPage /> },
+      { path: "/projets-partenaires", lazy: async () => ({ Component: (await import("@/features/partner-projects/components/partner-projects-page")).PartnerProjectsPage }) },
       { path: "/a-propos", element: <AboutPage /> },
       { path: "/contact", element: <ContactPage /> },
       { path: "/connexion", element: <LoginPage /> },

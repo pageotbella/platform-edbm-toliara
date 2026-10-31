@@ -14,6 +14,7 @@ const PUBLIC_NAV = [
   { href: "/carte", label: "Carte interactive" },
   { href: "/secteurs", label: "Secteurs" },
   { href: "/regions", label: "Régions" },
+  { href: "/projets-partenaires", label: "Projets PTF" },
   { href: "/a-propos", label: "À propos" },
   { href: "/contact", label: "Contact" },
 ];
@@ -34,7 +35,7 @@ function NavItems({ mobile, onNavigate, pathname = null }: NavProps) {
       className={cn(
         mobile
           ? "rounded px-3 py-2.5 text-sm font-medium hover:bg-muted"
-          : "rounded px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-muted hover:text-foreground",
+          : "rounded px-2.5 py-2 text-sm font-medium whitespace-nowrap text-slate-600 transition hover:bg-muted hover:text-foreground",
         isActive(pathname, item.href) && (mobile ? "bg-surface-low text-primary" : "bg-surface-low font-semibold text-primary"),
       )}
     >
@@ -68,9 +69,9 @@ export function SiteHeader() {
         </div>
       </div>
       <div className="border-b bg-white/95 backdrop-blur">
-        <div className="container-page flex h-16 items-center justify-between gap-6">
-          <Logo />
-          <nav className="hidden items-center gap-1 xl:flex" aria-label="Navigation principale">
+        <div className="container-page flex h-16 items-center justify-between gap-4">
+          <Logo className="shrink-0" />
+          <nav className="hidden items-center gap-0.5 xl:flex" aria-label="Navigation principale">
             <Nav />
           </nav>
           <div className="flex items-center gap-2">

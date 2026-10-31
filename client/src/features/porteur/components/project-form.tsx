@@ -1,12 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, ArrowRight, Check, Coins, Lightbulb, MapPin, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ClipboardList, Coins, FilePlus2, Lightbulb, MapPin, Pencil, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, type FieldPath, useForm, useWatch } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/common/empty-state";
 import { FormField } from "@/components/common/form-field";
-import { PageHeader } from "@/components/common/page-header";
 import { PageSkeleton } from "@/components/common/page-skeleton";
 import { SimpleSelect } from "@/components/common/simple-select";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -15,10 +14,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { INVESTMENT_MODELS, PROJECT_TYPES } from "@/config/constants";
 import { LocationPicker } from "@/features/map/components";
 import { useFilterOptions } from "@/features/opportunities/hooks";
+import { formatAmountFull } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PorteurProject } from "@/types";
 import { useCreateProject, useMyProject, useUpdateProject } from "../hooks";
+import { completeness } from "../completeness";
 import { type ProjectInput, projectInputSchema, type ProjectOutput } from "../schemas";
+import { GradeScale, MonoRef, OpsHeader } from "./ops-ui";
 
 // Trois étapes courtes : seuls le titre, le secteur, la région et la description sont obligatoires
 const STEPS: { title: string; hint: string; icon: typeof Lightbulb; fields: FieldPath<ProjectInput>[] }[] = [
@@ -57,6 +59,7 @@ function ProjectForm({ project }: { project?: PorteurProject }) {
   const districtId = useWatch({ control, name: "districtId" });
   const lat = useWatch({ control, name: "latitude" });
   const lng = useWatch({ control, name: "longitude" });
+  const values = useWatch({ control });
 
   const opts = options.data;
   const districts = (opts?.districts ?? []).filter((d) => d.regionId === regionId).map((d) => ({ value: d.id, label: d.name }));
@@ -91,43 +94,31 @@ function ProjectForm({ project }: { project?: PorteurProject }) {
   const last = step === STEPS.length - 1;
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mx-auto max-w-3xl space-y-6">
-      {/* Progression */}
-      <ol className="grid grid-cols-3 gap-2">
-        {STEPS.map((s, i) => {
-          const Icon = i < step ? Check : s.icon;
-          return (
-            <li key={s.title}>
+    <form onSubmit={onSubmit} noValidate className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <section className="overflow-hidden rounded-xl border bg-white shadow-card">
+        {/* Étapes en onglets soulignés */}
+        <div className="flex overflow-x-auto border-b" role="tablist" aria-label="Étapes du dépôt">
+          {STEPS.map((st, i) => {
+            const Icon = i < step ? Check : st.icon;
+            return (
               <button
-                type="button"
+                key={st.title} type="button" role="tab" aria-selected={i === step}
                 onClick={() => i < step && setStep(i)}
                 disabled={i > step}
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-lg border bg-white p-3 text-left transition",
-                  i === step ? "border-primary ring-1 ring-primary" : i < step ? "hover:border-border-strong" : "opacity-60",
+                  "flex min-w-0 flex-1 items-center justify-center gap-2 border-b-2 px-4 py-3.5 text-sm font-semibold whitespace-nowrap transition",
+                  i === step ? "border-primary text-primary" : i < step ? "border-transparent text-emerald-700 hover:bg-muted/50" : "border-transparent text-muted-foreground",
                 )}
               >
-                <span className={cn(
-                  "flex size-9 shrink-0 items-center justify-center rounded-full",
-                  i === step ? "bg-primary text-white" : i < step ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground",
-                )}>
-                  <Icon className="size-4" />
-                </span>
-                <span className="hidden min-w-0 sm:block">
-                  <span className="block text-sm font-semibold">{s.title}</span>
-                  <span className="block truncate text-xs text-muted-foreground">{s.hint}</span>
-                </span>
+                <Icon className="size-4 shrink-0" /> <span className="hidden sm:inline">{i + 1}. {st.title}</span>
               </button>
-            </li>
-          );
-        })}
-      </ol>
+            );
+          })}
+        </div>
 
-      <div className="rounded-xl border bg-white p-5 shadow-card md:p-8">
-        <p className="label-caps text-primary">Étape {step + 1} sur {STEPS.length}</p>
-        <h2 className="mt-1 text-xl font-bold">{STEPS[step]!.title}</h2>
-
-        <div className="mt-6 space-y-5">
+        <div className="p-5 md:p-7">
+          <p className="label-caps text-primary">Étape {step + 1} sur {STEPS.length} · {STEPS[step]!.hint}</p>
+          <div className="mt-5 space-y-5">
           {step === 0 && (
             <>
               <FormField label="Titre du projet" htmlFor="title" error={errors.title?.message} required hint="Un titre court et parlant, par ex. « Unité de séchage de poisson à Morombe ».">
@@ -230,44 +221,94 @@ function ProjectForm({ project }: { project?: PorteurProject }) {
               ))}
             </>
           )}
+          </div>
         </div>
-      </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        {step > 0 ? (
-          <Button type="button" variant="outline" className="h-11 bg-white" onClick={() => setStep((s) => s - 1)}>
-            <ArrowLeft /> Retour
-          </Button>
-        ) : (
-          <Link to={project ? `/porteur/projets/${project.id}` : "/porteur"} className={cn(buttonVariants({ variant: "ghost" }), "h-11")}>Annuler</Link>
-        )}
-        {last ? (
-          <Button type="submit" className="h-11 px-5" disabled={saving}>
-            <Save /> {saving ? "Enregistrement…" : project ? "Enregistrer les modifications" : "Enregistrer mon projet"}
-          </Button>
-        ) : (
-          <Button type="button" className="h-11 px-5" onClick={next}>
-            Continuer <ArrowRight />
-          </Button>
-        )}
-      </div>
-      {!project && last && (
-        <p className="text-center text-xs text-muted-foreground">
-          Votre projet est enregistré comme brouillon : vous pourrez ensuite ajouter des photos et documents, puis le transmettre à l'EDBM.
-        </p>
-      )}
+        {/* Navigation entre les étapes */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/30 px-5 py-4 md:px-7">
+          {step > 0 ? (
+            <Button type="button" variant="outline" className="h-10 bg-white" onClick={() => setStep((st) => st - 1)}>
+              <ArrowLeft /> Retour
+            </Button>
+          ) : (
+            <Link to={project ? `/porteur/projets/${project.id}` : "/porteur"} className={cn(buttonVariants({ variant: "ghost" }), "h-10")}>Annuler</Link>
+          )}
+          {last ? (
+            <Button type="submit" className="h-10 px-5" disabled={saving}>
+              <Save /> {saving ? "Enregistrement…" : project ? "Enregistrer les modifications" : "Enregistrer mon projet"}
+            </Button>
+          ) : (
+            <Button type="button" className="h-10 px-5" onClick={next}>
+              Continuer <ArrowRight />
+            </Button>
+          )}
+        </div>
+      </section>
+
+      <Summary project={project} values={values} sectors={opts?.sectors ?? []} regions={opts?.regions ?? []} districts={opts?.districts ?? []} />
     </form>
+  );
+}
+
+// Récapitulatif du dossier, mis à jour pendant la saisie
+function Summary({ project, values, sectors, regions, districts }: {
+  project?: PorteurProject;
+  values: Partial<ProjectInput>;
+  sectors: { id: string; name: string }[];
+  regions: { id: string; name: string }[];
+  districts: { id: string; name: string }[];
+}) {
+  const name = (list: { id: string; name: string }[], id?: string) => list.find((x) => x.id === id)?.name;
+  const district = name(districts, values.districtId);
+  const c = completeness({
+    description: values.description ?? "",
+    estimatedInvestment: values.estimatedInvestment ?? null,
+    district: district ?? null,
+    latitude: values.latitude ?? null,
+    media: project?.media.length ?? 0,
+    documents: project?.documents.length ?? 0,
+  });
+  const rows: [string, React.ReactNode][] = [
+    ["Titre", values.title],
+    ["Secteur", name(sectors, values.sectorId)],
+    ["Type", values.projectType],
+    ["Localisation", [district, name(regions, values.regionId)].filter(Boolean).join(", ")],
+    ["Montant", values.estimatedInvestment ? formatAmountFull(Number(values.estimatedInvestment), values.currency ?? "USD") : null],
+    ["Partenariat", values.investmentModel],
+  ];
+  return (
+    <aside className="overflow-hidden rounded-xl border bg-white shadow-card lg:sticky lg:top-20">
+      <div className="bg-primary-dark px-5 py-4 text-white">
+        <p className="label-caps flex items-center gap-1.5 text-brand-light"><ClipboardList className="size-3.5" /> Récapitulatif du dossier</p>
+        <p className="mt-1 font-mono text-sm text-white/85">{project?.reference ?? "NOUVEAU DOSSIER"}</p>
+      </div>
+      <dl className="divide-y text-sm">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex items-start justify-between gap-3 px-5 py-2.5">
+            <dt className="shrink-0 text-xs text-muted-foreground">{k}</dt>
+            <dd className={cn("min-w-0 text-right font-medium break-words", !v && "font-normal text-muted-foreground")}>{v || "—"}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="space-y-2 border-t bg-surface-low/50 px-5 py-4">
+        <GradeScale label={`Complétude · ${c.done}/${c.total}`} grade={c.grade} ratio={c.ratio} />
+        <p className="text-xs text-muted-foreground">
+          {project ? "Photos et documents se gèrent depuis la fiche du projet." : "Photos et documents s'ajoutent juste après l'enregistrement."}
+          {" "}Rien n&apos;est envoyé à l&apos;EDBM tant que vous ne transmettez pas le projet.
+        </p>
+      </div>
+    </aside>
   );
 }
 
 export function NewProjectPage() {
   return (
     <div className="space-y-6">
-      <PageHeader
-        crumbs={[{ label: "Mes projets", href: "/porteur" }, { label: "Déposer un projet" }]}
-        eyebrow="Dépôt en ligne"
-        title="Déposer un projet"
-        description="Présentez votre projet en trois étapes. Rien n'est envoyé à l'EDBM tant que vous ne l'avez pas soumis."
+      <OpsHeader
+        icon={FilePlus2}
+        eyebrow={<><Link to="/porteur" className="hover:underline">Mes projets</Link> <span className="text-muted-foreground">/</span> Dépôt en ligne</>}
+        title="Déposer un projet d'investissement"
+        description="Présentez votre projet en trois étapes : il est enregistré comme brouillon, vous ajoutez ensuite vos pièces puis vous le transmettez à l'EDBM."
       />
       <ProjectForm />
     </div>
@@ -289,10 +330,11 @@ export function EditProjectPage() {
   }
   return (
     <div className="space-y-6">
-      <PageHeader
-        crumbs={[{ label: "Mes projets", href: "/porteur" }, { label: data.title, href: `/porteur/projets/${id}` }, { label: "Modifier" }]}
-        eyebrow={data.reference ?? "Projet"}
+      <OpsHeader
+        icon={Pencil}
+        eyebrow={<><Link to="/porteur" className="hover:underline">Mes projets</Link> <span className="text-muted-foreground">/</span> <MonoRef className="text-[11px]">{data.reference}</MonoRef></>}
         title="Modifier mon projet"
+        description={<>« {data.title} » — enregistrez vos corrections, puis transmettez le projet depuis sa fiche.</>}
       />
       <ProjectForm project={data} />
     </div>

@@ -1,14 +1,13 @@
 import {
-  CheckCircle2, Clock, Download, ExternalLink, FileText, History, ImageIcon, MessageSquareWarning, Pencil, Send, Trash2, Upload,
+  CheckCircle2, Circle, ClipboardList, Coins, Download, ExternalLink, FileText, FolderOpen, Headset, History, ImageIcon,
+  MessageSquareWarning, Pencil, Send, Trash2, Upload, X,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { EmptyState } from "@/components/common/empty-state";
-import { PageHeader } from "@/components/common/page-header";
 import { PageSkeleton } from "@/components/common/page-skeleton";
-import { Panel } from "@/components/common/panel";
 import { SimpleSelect } from "@/components/common/simple-select";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { DOCUMENT_TYPES } from "@/config/constants";
@@ -18,77 +17,108 @@ import { useDeleteDocument } from "@/features/documents/hooks";
 import { fileUrl, formatAmountFull, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PorteurProject } from "@/types";
+import { completeness } from "../completeness";
 import { useDeleteProject, useMyProject, useSubmitProject } from "../hooks";
 import { PORTEUR_STATUS } from "../status";
+import { AlertStrip, GradeScale, MonoRef, OpsHeader, StatTile } from "./ops-ui";
 import { PorteurStatusBadge, ProjectProgress } from "./project-progress";
 
 const ext = (key: string) => key.split(".").pop()?.toUpperCase() ?? "DOC";
 
-// Ce que le porteur doit savoir (ou faire) maintenant
-function NextStep({ p, onSubmit }: { p: PorteurProject; onSubmit: () => void }) {
-  if (p.status === "brouillon") {
-    const returned = !!p.lastNote;
-    return (
-      <section className={cn("rounded-xl border p-5 md:p-6", returned ? "border-amber-300 bg-amber-50" : "border-primary/30 bg-accent")}>
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="max-w-2xl space-y-2">
-            <p className={cn("flex items-center gap-2 font-bold", returned ? "text-amber-900" : "text-primary")}>
-              {returned ? <MessageSquareWarning className="size-5" /> : <Send className="size-5" />}
-              {returned ? "L'EDBM vous demande des compléments" : "Prochaine étape : transmettre votre projet à l'EDBM"}
-            </p>
-            {returned ? (
-              <blockquote className="rounded-md border-l-4 border-amber-500 bg-white px-4 py-3 text-sm whitespace-pre-line">{p.lastNote}</blockquote>
-            ) : (
-              <p className="text-sm text-secondary">
-                Vérifiez vos informations, ajoutez des photos et documents (plan d'affaires, étude…), puis transmettez le projet.
-                Rien n'est envoyé tant que vous ne cliquez pas sur « Transmettre ».
-              </p>
-            )}
-          </div>
-          <div className="flex shrink-0 flex-wrap gap-2">
-            <Link to={`/porteur/projets/${p.id}/modifier`} className={cn(buttonVariants({ variant: "outline" }), "h-10 bg-white")}>
-              <Pencil /> Modifier
-            </Link>
-            <Button className="h-10 px-4" onClick={onSubmit}>
-              <Send /> {returned ? "Transmettre à nouveau" : "Transmettre à l'EDBM"}
-            </Button>
-          </div>
-        </div>
-      </section>
-    );
-  }
-  const messages: Record<string, { icon: typeof Clock; title: string; text: string }> = {
-    en_verification: {
-      icon: Clock,
-      title: "Votre projet est entre les mains de l'EDBM",
-      text: "Un agent de l'antenne de Toliara l'étudie. Vous recevrez un e-mail dès qu'il sera validé ou si des compléments sont nécessaires. Vous pouvez encore ajouter des documents.",
-    },
-    validee: { icon: CheckCircle2, title: "Votre projet a été validé", text: "Il sera prochainement publié dans le catalogue des opportunités." },
-    publiee: { icon: CheckCircle2, title: "Votre projet est en ligne", text: "Les investisseurs peuvent le consulter et manifester leur intérêt auprès de l'EDBM, qui reviendra vers vous." },
-    suspendue: { icon: Clock, title: "Votre projet est suspendu", text: "Il n'est temporairement plus visible. Contactez l'antenne EDBM pour en savoir plus." },
-    archivee: { icon: Clock, title: "Votre projet est archivé", text: "Il n'est plus suivi. Contactez l'antenne EDBM pour le réactiver." },
-  };
-  const m = messages[p.status]!;
+/** Bloc blanc à en-tête en petites capitales (sections de la fiche). */
+function Block({ title, icon: Icon, action, children, bodyClassName }: {
+  title: string;
+  icon: typeof FileText;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+  bodyClassName?: string;
+}) {
   return (
-    <section className="flex flex-col gap-4 rounded-xl border bg-white p-5 shadow-card md:flex-row md:items-center md:justify-between md:p-6">
-      <div className="flex gap-3">
-        <m.icon className="mt-0.5 size-5 shrink-0 text-primary" />
-        <div>
-          <p className="font-bold">{m.title}</p>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{m.text}</p>
-        </div>
+    <section className="overflow-hidden rounded-xl border bg-white shadow-card">
+      <div className="flex items-center justify-between gap-3 border-b px-5 py-3.5">
+        <h2 className="label-caps flex items-center gap-2 text-secondary"><Icon className="size-4 text-primary" /> {title}</h2>
+        {action}
       </div>
-      {p.status === "publiee" && (
-        <Link to={`/opportunites/${p.slug}`} target="_blank" className={cn(buttonVariants({ variant: "outline" }), "h-10 shrink-0")}>
-          <ExternalLink /> Voir la fiche publique
-        </Link>
-      )}
+      <div className={cn("p-5", bodyClassName)}>{children}</div>
     </section>
   );
 }
 
+// Message d'état quand le projet est entre les mains de l'EDBM
+function StatusStrip({ p }: { p: PorteurProject }) {
+  const messages: Partial<Record<PorteurProject["status"], { title: string; text: string }>> = {
+    en_verification: {
+      title: "Votre projet est entre les mains de l'EDBM",
+      text: "Un agent de l'antenne de Toliara l'étudie. Vous recevrez un e-mail dès qu'il sera validé ou si des compléments sont nécessaires. Vous pouvez encore ajouter des photos et documents.",
+    },
+    validee: { title: "Votre projet a été validé", text: "Il sera prochainement publié dans le catalogue des opportunités." },
+    publiee: { title: "Votre projet est en ligne", text: "Les investisseurs peuvent le consulter et manifester leur intérêt auprès de l'EDBM, qui reviendra vers vous." },
+    suspendue: { title: "Votre projet est suspendu", text: "Il n'est temporairement plus visible. Contactez l'antenne EDBM pour en savoir plus." },
+    archivee: { title: "Votre projet est archivé", text: "Il n'est plus suivi. Contactez l'antenne EDBM pour le réactiver." },
+  };
+  const m = messages[p.status];
+  if (!m) return null;
+  return (
+    <AlertStrip
+      tone={p.status === "suspendue" ? "danger" : "info"}
+      icon={PORTEUR_STATUS[p.status].icon}
+      title={m.title}
+      action={p.status === "publiee" ? (
+        <Link to={`/opportunites/${p.slug}`} target="_blank" className={cn(buttonVariants({ variant: "outline" }), "h-9 bg-white px-3")}><ExternalLink /> Fiche publique</Link>
+      ) : undefined}
+    >
+      {m.text}
+    </AlertStrip>
+  );
+}
+
+// Fiche projet présentée comme un registre : libellé à gauche, valeur à droite
+function ProjectSheet({ p }: { p: PorteurProject }) {
+  const rows: [string, React.ReactNode][] = [
+    ["Référence", <MonoRef key="r">{p.reference ?? "—"}</MonoRef>],
+    ["Secteur", p.sector],
+    ["Type de projet", p.projectType],
+    ["Région", p.region],
+    ["District / commune", [p.district, p.commune].filter(Boolean).join(" · ")],
+    ["Coordonnées GPS", p.latitude != null && p.longitude != null ? <span key="g" className="font-mono text-xs">{p.latitude.toFixed(4)}, {p.longitude.toFixed(4)}</span> : null],
+    ["Montant recherché", p.estimatedInvestment != null ? formatAmountFull(p.estimatedInvestment, p.currency) : null],
+    ["Partenariat recherché", p.investmentModel],
+  ];
+  const texts: [string, string | null][] = [
+    ["Potentiel du projet", p.potential],
+    ["Clients visés", p.targetMarket],
+    ["Ressources disponibles", p.resources],
+  ];
+  return (
+    <div className="space-y-5">
+      <div>
+        <p className="label-caps mb-1.5 text-muted-foreground">Présentation</p>
+        <p className="text-sm leading-6 whitespace-pre-line">{p.description}</p>
+      </div>
+      <dl className="grid overflow-hidden rounded-lg border sm:grid-cols-2">
+        {rows.map(([k, v]) => (
+          <div key={k} className="flex items-center justify-between gap-3 border-b px-4 py-2.5 text-sm odd:sm:border-r">
+            <dt className="text-xs text-muted-foreground">{k}</dt>
+            <dd className={cn("text-right font-medium", !v && "font-normal text-muted-foreground italic")}>{v || "Non renseigné"}</dd>
+          </div>
+        ))}
+      </dl>
+      {texts.some(([, v]) => v) && (
+        <div className="grid gap-3 md:grid-cols-3">
+          {texts.filter(([, v]) => v).map(([k, v]) => (
+            <div key={k} className="rounded-lg border-l-4 border-l-primary bg-surface-low/60 px-4 py-3">
+              <p className="label-caps text-muted-foreground">{k}</p>
+              <p className="mt-1 text-sm whitespace-pre-line">{v}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Pièces jointes du porteur : réservées aux membres connectés, l'EDBM décide de leur diffusion
-function ProjectDocuments({ p, onChange }: { p: PorteurProject; onChange: () => void }) {
+function DocumentsTable({ p, onChange }: { p: PorteurProject; onChange: () => void }) {
   const input = useRef<HTMLInputElement>(null);
   const [type, setType] = useState<string>("Fiche projet");
   const [busy, setBusy] = useState(false);
@@ -115,34 +145,52 @@ function ProjectDocuments({ p, onChange }: { p: PorteurProject; onChange: () => 
   };
 
   return (
-    <div className="space-y-3">
-      {p.documents.length ? (
-        <ul className="space-y-2">
-          {p.documents.map((d) => (
-            <li key={d.id} className="flex items-center gap-3 rounded-md border bg-white p-3">
-              <span className="label-caps flex h-10 w-12 shrink-0 items-center justify-center rounded bg-red-50 text-red-700">{ext(d.fileKey)}</span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{d.name}</p>
-                <p className="text-xs text-muted-foreground">{d.type} · ajouté le {formatDate(d.createdAt)}</p>
-              </div>
-              <a href={fileUrl(d.fileKey)} target="_blank" rel="noopener" className="flex size-8 items-center justify-center rounded text-secondary hover:bg-muted" aria-label={`Télécharger ${d.name}`}>
-                <Download className="size-4" />
-              </a>
-              {p.canEditFiles && (
-                <button type="button" onClick={() => setToDelete(d)} className="flex size-8 items-center justify-center rounded text-muted-foreground hover:bg-red-50 hover:text-red-700" aria-label={`Supprimer ${d.name}`}>
-                  <Trash2 className="size-4" />
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-muted-foreground">Aucun document pour l'instant.</p>
-      )}
+    <div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[520px] text-sm">
+          <thead>
+            <tr className="label-caps border-b bg-muted/40 text-left text-muted-foreground">
+              <th className="px-5 py-2.5">Document</th>
+              <th className="px-3 py-2.5">Type</th>
+              <th className="px-3 py-2.5">Ajouté le</th>
+              <th className="px-5 py-2.5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {p.documents.map((d) => (
+              <tr key={d.id} className="border-b last:border-0 hover:bg-muted/30">
+                <td className="px-5 py-2.5">
+                  <span className="flex items-center gap-3">
+                    <span className="flex h-8 w-10 shrink-0 items-center justify-center rounded bg-red-50 font-mono text-[10px] font-bold text-red-700">{ext(d.fileKey)}</span>
+                    <span className="max-w-64 truncate font-medium">{d.name}</span>
+                  </span>
+                </td>
+                <td className="px-3 py-2.5 text-xs text-muted-foreground">{d.type}</td>
+                <td className="tabular px-3 py-2.5 text-xs text-muted-foreground">{formatDate(d.createdAt)}</td>
+                <td className="px-5 py-2.5">
+                  <span className="flex justify-end gap-1">
+                    <a href={fileUrl(d.fileKey)} target="_blank" rel="noopener" className="flex size-8 items-center justify-center rounded-md text-secondary hover:bg-accent hover:text-primary" aria-label={`Télécharger ${d.name}`}>
+                      <Download className="size-4" />
+                    </a>
+                    {p.canEditFiles && (
+                      <button type="button" onClick={() => setToDelete(d)} className="flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-red-50 hover:text-red-700" aria-label={`Supprimer ${d.name}`}>
+                        <Trash2 className="size-4" />
+                      </button>
+                    )}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {!p.documents.length && (
+              <tr><td colSpan={4} className="px-5 py-6 text-center text-sm text-muted-foreground">Aucun document : un plan d&apos;affaires ou une étude rassure l&apos;EDBM et les investisseurs.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
       {p.canEditFiles && (
-        <div className="flex flex-col gap-3 rounded-lg border-2 border-dashed bg-surface-low/50 p-4 sm:flex-row sm:items-end">
+        <div className="flex flex-col gap-3 border-t bg-surface-low/50 px-5 py-4 sm:flex-row sm:items-end">
           <div className="flex-1 space-y-1.5">
-            <p className="text-[13px] font-semibold text-secondary">Type de document</p>
+            <p className="text-xs font-medium text-secondary">Type du document à ajouter</p>
             <SimpleSelect value={type} onChange={(v) => setType(v ?? "Fiche projet")} options={DOCUMENT_TYPES.map((t) => ({ value: t, label: t }))} />
           </div>
           <Button type="button" className="h-10" disabled={busy} onClick={() => input.current?.click()}>
@@ -151,7 +199,6 @@ function ProjectDocuments({ p, onChange }: { p: PorteurProject; onChange: () => 
           <input ref={input} type="file" multiple hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" onChange={(e) => onFiles(e.target.files)} />
         </div>
       )}
-      {p.canEditFiles && <p className="text-xs text-muted-foreground">PDF, Word, Excel ou PowerPoint · 20 Mo maximum par fichier.</p>}
       <ConfirmDialog
         open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}
         title="Supprimer ce document ?" description={<>« {toDelete?.name} » sera définitivement supprimé.</>}
@@ -161,41 +208,73 @@ function ProjectDocuments({ p, onChange }: { p: PorteurProject; onChange: () => 
   );
 }
 
-function Summary({ p }: { p: PorteurProject }) {
-  const rows: [string, string | null][] = [
-    ["Secteur", p.sector],
-    ["Type de projet", p.projectType],
-    ["Localisation", [p.commune, p.district, p.region].filter(Boolean).join(", ")],
-    ["Montant recherché", p.estimatedInvestment != null ? formatAmountFull(p.estimatedInvestment, p.currency) : null],
-    ["Partenariat recherché", p.investmentModel],
-  ];
-  const texts: [string, string | null][] = [
-    ["Potentiel du projet", p.potential],
-    ["Clients visés", p.targetMarket],
-    ["Ce dont vous disposez déjà", p.resources],
-  ];
+// Panneau latéral « dossier actif » : en-tête sombre, complétude, journal, actions
+function DossierPanel({ p, onDelete }: { p: PorteurProject; onDelete: () => void }) {
+  const c = completeness({ ...p, media: p.media.length, documents: p.documents.length });
+  const steps = [...p.history].reverse();
   return (
-    <div className="space-y-5">
-      <p className="text-sm leading-6 whitespace-pre-line">{p.description}</p>
-      <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-        {rows.map(([k, v]) => (
-          <div key={k} className="border-b pb-2">
-            <dt className="text-xs text-muted-foreground">{k}</dt>
-            <dd className={cn("font-medium", !v && "text-muted-foreground italic")}>{v || "Non renseigné"}</dd>
-          </div>
-        ))}
-      </dl>
-      {texts.some(([, v]) => v) && (
-        <dl className="space-y-3 text-sm">
-          {texts.filter(([, v]) => v).map(([k, v]) => (
-            <div key={k}>
-              <dt className="text-xs text-muted-foreground">{k}</dt>
-              <dd className="whitespace-pre-line">{v}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-    </div>
+    <aside className="overflow-hidden rounded-xl border bg-white shadow-card lg:sticky lg:top-20">
+      <div className="bg-primary-dark px-5 py-4 text-white">
+        <div className="flex items-center gap-2">
+          <span className="label-caps rounded bg-white/15 px-2 py-0.5 text-[10px] text-brand-light">Dossier actif</span>
+          <span className="font-mono text-xs text-white/80">{p.reference ?? "—"}</span>
+        </div>
+        <p className="mt-2 text-lg leading-snug font-bold">{p.title}</p>
+        <p className="text-xs text-white/70">{[p.district, p.region].filter(Boolean).join(" — ")}</p>
+      </div>
+
+      <div className="space-y-5 p-5">
+        <section className="space-y-2.5">
+          <p className="label-caps flex items-center justify-between text-secondary">
+            Complétude du dossier <span className="tabular text-primary">{c.done}/{c.total}</span>
+          </p>
+          <GradeScale grade={c.grade} ratio={c.ratio} />
+          <ul className="space-y-1.5 text-sm">
+            {c.items.map((i) => (
+              <li key={i.label} className={cn("flex items-center gap-2", i.ok ? "text-foreground" : "text-muted-foreground")}>
+                {i.ok ? <CheckCircle2 className="size-4 text-emerald-600" /> : <Circle className="size-4" />} {i.label}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="space-y-3 border-t pt-4">
+          <p className="label-caps flex items-center gap-1.5 text-secondary"><History className="size-3.5" /> Journal du dossier</p>
+          <ol className="space-y-2.5">
+            {steps.map((h, i) => {
+              const created = i === steps.length - 1;
+              const returned = h.status === "brouillon" && !!h.note;
+              const S = PORTEUR_STATUS[h.status];
+              return (
+                <li key={i} className={cn("rounded-lg border p-3", returned ? "border-amber-200 bg-amber-50/60" : "bg-white")}>
+                  <div className="flex items-start gap-2.5">
+                    <span className={cn("flex size-7 shrink-0 items-center justify-center rounded-md", returned ? "bg-amber-100 text-amber-700" : "bg-accent text-primary")}>
+                      {returned ? <MessageSquareWarning className="size-3.5" /> : <S.icon className="size-3.5" />}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="flex items-center justify-between gap-2 text-sm font-semibold">
+                        {created ? "Projet créé" : returned ? "Renvoyé pour compléments" : S.label}
+                        <span className="tabular shrink-0 text-[11px] font-normal text-muted-foreground">{formatDate(h.at)}</span>
+                      </p>
+                      {h.note && <p className="mt-1 text-xs whitespace-pre-line text-amber-900">{h.note}</p>}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </section>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/30 px-5 py-3">
+        <Link to="/contact" className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline"><Headset className="size-4" /> Contacter l&apos;antenne</Link>
+        {p.canDelete && (
+          <button type="button" onClick={onDelete} className="flex items-center gap-1.5 text-sm font-semibold text-red-700 hover:underline">
+            <X className="size-4" /> Retirer le projet
+          </button>
+        )}
+      </div>
+    </aside>
   );
 }
 
@@ -217,33 +296,64 @@ export function ProjectPage() {
   if (error || !p) {
     return <EmptyState title="Projet introuvable" action={<Link to="/porteur" className={buttonVariants({ variant: "outline" })}>Mes projets</Link>} />;
   }
+  const c = completeness({ ...p, media: p.media.length, documents: p.documents.length });
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        crumbs={[{ label: "Mes projets", href: "/porteur" }, { label: p.title }]}
-        eyebrow={`${p.reference ?? "Projet"} · déposé le ${formatDate(p.createdAt)}`}
+      <OpsHeader
+        icon={FolderOpen}
+        eyebrow={<><Link to="/porteur" className="hover:underline">Mes projets</Link> <span className="text-muted-foreground">/</span> <span className="font-mono normal-case">{p.reference}</span></>}
         title={p.title}
-        actions={<PorteurStatusBadge status={p.status} className="px-3 py-1.5" />}
-      />
+        description={<span className="flex flex-wrap items-center gap-x-3 gap-y-1">{p.sector} · {[p.district, p.region].filter(Boolean).join(", ")} · déposé le {formatDate(p.createdAt)} <PorteurStatusBadge status={p.status} /></span>}
+        actions={
+          <>
+            {p.canEdit && (
+              <Link to={`/porteur/projets/${p.id}/modifier`} className={cn(buttonVariants({ variant: "outline" }), "h-10 px-4")}><Pencil /> Modifier</Link>
+            )}
+            {p.canSubmit && (
+              <Button className="h-10 px-4" onClick={() => setConfirm("submit")}><Send /> {p.lastNote ? "Transmettre à nouveau" : "Transmettre à l'EDBM"}</Button>
+            )}
+          </>
+        }
+      >
+        <div className="mt-6 border-t pt-5"><ProjectProgress status={p.status} /></div>
+      </OpsHeader>
 
-      <div className="rounded-xl border bg-white p-5 shadow-card">
-        <ProjectProgress status={p.status} />
-        <p className="mt-3 text-center text-sm text-muted-foreground">{PORTEUR_STATUS[p.status].hint}</p>
+      {p.lastNote ? (
+        <AlertStrip
+          tone="warning" icon={MessageSquareWarning} title="L'EDBM vous demande des compléments"
+          action={<Link to={`/porteur/projets/${p.id}/modifier`} className={cn(buttonVariants(), "h-9 px-3")}><Pencil /> Corriger le projet</Link>}
+        >
+          <span className="whitespace-pre-line">{p.lastNote}</span>
+        </AlertStrip>
+      ) : p.status === "brouillon" ? (
+        <AlertStrip tone="info" icon={Send} title="Prochaine étape : transmettre votre projet à l'EDBM">
+          Vérifiez vos informations et joignez vos pièces, puis cliquez sur « Transmettre ». Rien n&apos;est envoyé avant.
+        </AlertStrip>
+      ) : <StatusStrip p={p} />}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatTile label="Étape du dossier" value={PORTEUR_STATUS[p.status].label} icon={PORTEUR_STATUS[p.status].icon} valueClassName="text-xl leading-7"
+          sub={PORTEUR_STATUS[p.status].hint} tone={p.lastNote ? "amber" : "primary"} />
+        <StatTile label="Montant recherché" icon={Coins} tone="blue"
+          value={p.estimatedInvestment != null ? formatAmountFull(p.estimatedInvestment, p.currency) : "—"} valueClassName="text-xl leading-7"
+          sub={p.investmentModel ?? "Partenariat non précisé"} />
+        <StatTile label="Pièces jointes" value={p.media.length + p.documents.length} icon={FileText} tone="green"
+          segments={[
+            { label: "Photos", value: p.media.length, className: "bg-primary" },
+            { label: "Documents", value: p.documents.length, className: "bg-ochre" },
+          ]} />
+        <StatTile label="Complétude" value={`${Math.round(c.ratio * 100)} %`} icon={CheckCircle2} tone={c.ratio < 0.5 ? "red" : "primary"}
+          sub={`Note ${c.grade} · ${c.total - c.done} élément(s) à ajouter`} />
       </div>
 
-      <NextStep p={p} onSubmit={() => setConfirm("submit")} />
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="space-y-6">
-          <Panel
-            title="Mon projet"
-            icon={FileText}
-            action={p.canEdit ? <Link to={`/porteur/projets/${p.id}/modifier`} className="text-sm font-semibold text-primary hover:underline">Modifier</Link> : undefined}
-          >
-            <Summary p={p} />
-          </Panel>
-          <Panel title="Photos" icon={ImageIcon} description={p.canEditFiles ? "La photo marquée « Couverture » illustre votre projet dans le catalogue." : undefined}>
+          <Block title="Fiche projet" icon={ClipboardList}
+            action={p.canEdit ? <Link to={`/porteur/projets/${p.id}/modifier`} className="text-xs font-semibold text-primary hover:underline">Modifier</Link> : undefined}>
+            <ProjectSheet p={p} />
+          </Block>
+          <Block title={`Photos (${p.media.length})`} icon={ImageIcon}>
             {p.canEditFiles ? (
               <MediaGallery opportunityId={p.id} media={p.media} onChange={() => refetch()} />
             ) : p.media.length ? (
@@ -251,35 +361,12 @@ export function ProjectPage() {
                 {p.media.map((m) => <img key={m.id} src={fileUrl(m.fileKey)} alt={m.title ?? ""} className="aspect-[4/3] w-full rounded-lg border object-cover" />)}
               </div>
             ) : <p className="text-sm text-muted-foreground">Aucune photo.</p>}
-          </Panel>
-          <Panel title="Documents" icon={FileText} description="Plan d'affaires, étude de faisabilité, autorisations… Ils restent visibles des seuls membres connectés, sauf décision de l'EDBM.">
-            <ProjectDocuments p={p} onChange={() => refetch()} />
-          </Panel>
+          </Block>
+          <Block title={`Documents (${p.documents.length})`} icon={FileText} bodyClassName="p-0">
+            <DocumentsTable p={p} onChange={() => refetch()} />
+          </Block>
         </div>
-
-        <aside className="space-y-6">
-          <Panel title="Historique" icon={History}>
-            <ol className="relative space-y-4 border-l pl-5">
-              {[...p.history].reverse().map((h, i) => (
-                <li key={i} className="relative">
-                  <span className={cn("absolute -left-[26px] mt-1 size-3 rounded-full border-2 border-white", i === 0 ? "bg-primary" : "bg-border-strong")} />
-                  <p className="text-sm font-semibold">{i === p.history.length - 1 ? "Projet créé" : h.status === "brouillon" && h.note ? "Renvoyé pour compléments" : PORTEUR_STATUS[h.status].label}</p>
-                  <p className="text-xs text-muted-foreground">{formatDate(h.at)}</p>
-                  {h.note && <p className="mt-1 rounded bg-amber-50 px-2 py-1 text-xs whitespace-pre-line text-amber-900">{h.note}</p>}
-                </li>
-              ))}
-            </ol>
-          </Panel>
-          <Panel title="Besoin d'aide ?">
-            <p className="text-sm text-muted-foreground">Une question sur votre dossier ? L'antenne EDBM de Toliara vous répond.</p>
-            <Link to="/contact" className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">Contacter l'antenne →</Link>
-          </Panel>
-          {p.canDelete && (
-            <Button variant="outline" className="h-10 w-full text-red-700 hover:bg-red-50 hover:text-red-800" onClick={() => setConfirm("delete")}>
-              <Trash2 /> Retirer ce projet
-            </Button>
-          )}
-        </aside>
+        <DossierPanel p={p} onDelete={() => setConfirm("delete")} />
       </div>
 
       <ConfirmDialog

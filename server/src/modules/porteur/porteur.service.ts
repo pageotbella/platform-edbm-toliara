@@ -57,6 +57,12 @@ export async function list(userId: string) {
       documents: sql<number>`(select count(*) from opportunity_documents d where d.opportunity_id = ${opportunities.id})::int`,
       media: sql<number>`(select count(*) from opportunity_media m where m.opportunity_id = ${opportunities.id})::int`,
       requests: sql<number>`(select count(*) from interest_requests r where r.opportunity_id = ${opportunities.id})::int`,
+      // Remarque de l'EDBM si le dernier changement de statut est un renvoi en brouillon
+      pendingNote: sql<string | null>`case when ${opportunities.status} = 'brouillon' then (
+        select a.details->>'note' from audit_logs a
+        where a.entity = 'opportunity' and a.entity_id = ${opportunities.id}::text and a.action = 'opportunity.status'
+        order by a.created_at desc limit 1
+      ) end`,
     })
     .from(opportunities)
     .innerJoin(sectors, eq(sectors.id, opportunities.sectorId))
@@ -92,8 +98,8 @@ export async function byId(id: string, userId: string) {
       .orderBy(desc(opportunityDocuments.createdAt)),
     history(id),
   ]);
-  // Dernière remarque de l'EDBM, affichée tant que le projet attend une correction
-  const lastNote = o.status === "brouillon" ? ([...steps].reverse().find((s) => s.note)?.note ?? null) : null;
+  // Remarque de l'EDBM jointe au dernier changement de statut (même règle que pendingNote dans list)
+  const lastNote = o.status === "brouillon" ? (steps.at(-1)?.note ?? null) : null;
   const { isFeatured: _f, infrastructures: _i, zoneAdvantages: _z, createdBy: _c, ...fields } = o;
   return { ...fields, ...names[0], media, documents, history: steps, lastNote, ...rights(o) };
 }

@@ -1,5 +1,5 @@
 import {
-  BarChart3, Bell, FilePlus2, FileText, FolderKanban, Heart, History, Inbox, KeyRound, LayoutDashboard, LayoutGrid, Map,
+  BarChart3, Bell, FilePlus2, FileText, FolderKanban, Handshake, Heart, History, Inbox, KeyRound, LayoutDashboard, LayoutGrid, Map,
   MapPinned, Send, Settings, Shapes, UserRound, Users, type LucideIcon,
 } from "lucide-react";
 
@@ -58,6 +58,7 @@ export const NAV: Record<Space, { label: string; sections: NavSection[] }> = {
           { href: "/edbm/opportunites", label: "Opportunités", icon: FolderKanban },
           { href: "/edbm/opportunites/nouvelle", label: "Nouvelle opportunité", icon: FilePlus2, exact: true },
           { href: "/edbm/documents", label: "Documents & médias", icon: FileText },
+          { href: "/edbm/projets-partenaires", label: "Projets des partenaires", icon: Handshake },
         ],
       },
       {
@@ -106,6 +107,7 @@ export const NAV: Record<Space, { label: string; sections: NavSection[] }> = {
         items: [
           { href: "/admin/opportunites", label: "Opportunités", icon: FolderKanban },
           { href: "/admin/documents", label: "Documents & médias", icon: FileText },
+          { href: "/admin/projets-partenaires", label: "Projets des partenaires", icon: Handshake },
           { href: "/admin/demandes", label: "Demandes d'intérêt", icon: Inbox, badge: "requests" },
           { href: "/admin/statistiques", label: "Statistiques", icon: BarChart3 },
         ],

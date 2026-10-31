@@ -11,6 +11,8 @@ export default defineConfig({
   optimizeDeps: { entries: ["src/**/*.tsx"] },
   server: {
     port: 5173,
+    // Pas de repli silencieux sur 5174 : Better Auth n’accepte que l’origine CLIENT_URL (connexion, déconnexion…)
+    strictPort: true,
     // Même origine pour le navigateur : pas de souci de cookies ni de CORS en dev
     proxy: { "/api": { target: "http://localhost:3000", changeOrigin: true } },
   },

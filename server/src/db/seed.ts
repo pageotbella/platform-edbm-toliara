@@ -1,6 +1,6 @@
 // Données initiales, idempotent : ne modifie jamais une ligne existante.
 //   npm run db:seed              → référentiels + comptes et opportunités de démonstration
-//   npm run db:seed -- --no-demo → référentiels uniquement (secteurs, régions, contact)
+//   npm run db:seed -- --no-demo → référentiels uniquement (secteurs, régions, contact, projets PTF)
 import { randomUUID } from "node:crypto";
 import { hashPassword } from "better-auth/crypto";
 import { and, eq } from "drizzle-orm";
@@ -13,12 +13,14 @@ import {
   investorProfiles,
   opportunities,
   type OpportunityStatus,
+  partnerProjects,
   regions,
   sectors,
   settings,
   user,
 } from "./schema";
 import demoOpportunities from "./seed-data/opportunities.json";
+import partnerProjectsData from "./seed-data/partner-projects.json";
 import reference from "./seed-data/reference.json";
 
 const withDemo = !process.argv.includes("--no-demo");
@@ -48,6 +50,17 @@ async function seedReference() {
   }
 
   await db.insert(settings).values({ key: "contact", value: reference.contact }).onConflictDoNothing();
+
+  // Projets PTF en cours (classeur « Projets financés par les PTF », onglet Tuléar) : importés une seule fois,
+  // un marqueur dans settings évite de recréer ceux que le personnel a supprimés ou renommés depuis
+  const [imported] = await db.insert(settings).values({ key: "seed.partner_projects", value: { importedAt: new Date().toISOString() } })
+    .onConflictDoNothing().returning();
+  if (imported) {
+    const allRegions = await db.select().from(regions);
+    await db.insert(partnerProjects).values(
+      partnerProjectsData.map(({ region, ...fields }) => ({ ...fields, regionId: allRegions.find((r) => r.code === region)!.id })),
+    );
+  }
 }
 
 const demoUsers = [
@@ -117,7 +130,7 @@ async function seedOpportunities() {
   }
 }
 
-console.log("Référentiels (secteurs, régions, contact)…");
+console.log("Référentiels (secteurs, régions, contact, projets PTF)…");
 await seedReference();
 if (withDemo) {
   console.log("Données de démonstration…");

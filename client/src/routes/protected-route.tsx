@@ -1,6 +1,7 @@
 import { Navigate, Outlet, ScrollRestoration, useLocation } from "react-router-dom";
 import { AppShell } from "@/components/layouts/app-shell";
 import { NAV, type Space } from "@/components/layouts/nav-config";
+import { PorteurShell } from "@/components/layouts/porteur-shell";
 import { PageSkeleton } from "@/components/common/page-skeleton";
 import { ROLE_HOME, type Role } from "@/config/constants";
 import { useSession } from "@/lib/auth-client";
@@ -18,11 +19,13 @@ export function ProtectedRoute({ roles, space }: { roles: Role[]; space: Space }
   const role = session?.user.role as Role | undefined;
   if (role && !roles.includes(role)) return <Navigate to={ROLE_HOME[role] ?? "/"} replace />;
 
-  return (
-    <AppShell space={space}>
+  // L'espace porteur a sa propre coquille (onglets horizontaux, sans barre latérale)
+  const content = (
+    <>
       <title>{`${NAV[space].label} — EDBM Toliara`}</title>
       {isPending ? <PageSkeleton /> : <Outlet />}
       <ScrollRestoration />
-    </AppShell>
+    </>
   );
+  return space === "porteur" ? <PorteurShell>{content}</PorteurShell> : <AppShell space={space}>{content}</AppShell>;
 }

@@ -42,3 +42,9 @@ desktop.ini
 
 # Réglages locaux de Claude Code
 .claude/settings.local.json
+
+# Fichiers de verrouillage Office (classeur ouvert dans Excel)
+~$*
+
+# Classeurs de données sources (contenu importé dans server/src/db/seed-data)
+*.xlsx

@@ -8,6 +8,20 @@
       "when": 1792919800636,
       "tag": "0000_baseline",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793468130292,
+      "tag": "0001_past_callisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793472512546,
+      "tag": "0002_daffy_jimmy_woo",
+      "breakpoints": true
     }
   ]
 }

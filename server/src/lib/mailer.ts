@@ -28,6 +28,9 @@ export async function sendMail(to: string | string[], mail: Mail): Promise<boole
     return true;
   } catch (err) {
     console.error(`[e-mail] échec de « ${mail.subject} » → ${recipients.join(", ")} :`, err instanceof Error ? err.message : err);
+    // En développement, l'expéditeur de test de Resend n'écrit qu'au titulaire du compte :
+    // le contenu (liens de confirmation, de réinitialisation…) est affiché pour pouvoir tester
+    if (env.NODE_ENV !== "production") console.info(`[e-mail non remis, contenu pour le développement]\n${mail.text}`);
     return false;
   }
 }
